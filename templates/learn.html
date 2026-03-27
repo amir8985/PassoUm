@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Learn New Words{% endblock %}
+
+{% block head_extra %}
+<style>
+  .word-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .85rem 1.2rem;
+    border-radius: 12px;
+    background: #fff;
+    border: 1.5px solid #e8eaf0;
+    transition: border-color .2s, box-shadow .15s;
+  }
+  .word-row:hover { border-color: #2ecc71; box-shadow: 0 3px 12px rgba(46,204,113,.12); }
+
+  .word-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: #eafaf1;
+    color: #1e8449;
+    font-weight: 800; font-size: .85rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .word-pt { font-weight: 800; font-size: 1.05rem; color: #1a1a2e; }
+  .word-en { font-size: .88rem; color: #6c757d; }
+  .cat-chip {
+    font-size: .65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; padding: .2em .65em;
+    border-radius: 50px; margin-left: auto; flex-shrink: 0;
+  }
+  .chip-verb        { background: #e8f5e9; color: #1b5e20; }
+  .chip-noun        { background: #e3f2fd; color: #0d47a1; }
+  .chip-adjective   { background: #fce4ec; color: #880e4f; }
+  .chip-adverb      { background: #fff3e0; color: #e65100; }
+  .chip-phrase      { background: #f3e5f5; color: #4a148c; }
+  .chip-number      { background: #e0f2f1; color: #004d40; }
+  .chip-pronoun     { background: #fafafa; color: #424242; }
+  .chip-preposition { background: #fff8e1; color: #f57f17; }
+
+  .audio-play {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: none; background: #eaf4ff; color: #2980b9;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: .9rem; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .audio-play:hover { background: #2980b9; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:680px;">
+
+  <!-- Header -->
+  <div class="text-center mb-4">
+    <div style="font-size:3rem;">📖</div>
+    <h2 class="fw-bold mt-2" style="color:#1a1a2e;">Learn New Words</h2>
+    <p class="text-muted">
+      Study these <strong>{{ words|length }}</strong> words, then take the quiz.
+      Listen to the pronunciation before you start!
+    </p>
+  </div>
+
+  <!-- Word list -->
+  <div class="d-flex flex-column gap-2 mb-4">
+    {% for w in words %}
+    <div class="word-row">
+      <div class="word-num">{{ loop.index }}</div>
+      <button class="audio-play"
+              onclick="playAudio('{{ w.audio_path }}', '{{ w.word }}')"
+              title="Listen to pronunciation">
+        <i class="bi bi-volume-up-fill"></i>
+      </button>
+      <div class="flex-grow-1">
+        <div class="word-pt">{{ w.word }}</div>
+        <div class="word-en">{{ w.translation }}</div>
+      </div>
+      <span class="cat-chip chip-{{ w.category }}">{{ w.category }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Quiz info box -->
+  <div class="card p-3 mb-4"
+       style="background:#fff8e1; border:1.5px solid #f39c12; border-radius:14px;">
+    <div class="d-flex align-items-start gap-3">
+      <div style="font-size:1.6rem; line-height:1;">⚠️</div>
+      <div>
+        <div class="fw-bold" style="color:#7d4e00;">Quiz Rules</div>
+        <ul class="mb-0 mt-1 text-muted small" style="padding-left:1.1rem;">
+          <li>You will answer <strong>2 questions per word</strong> ({{ words|length * 2 }} questions total).</li>
+          <li>Score ≥ 80% overall = <strong class="text-success">Pass</strong>.</li>
+          <li>A word is marked <strong>Mastered 🏅</strong> only if you get <strong>both</strong> its questions correct.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start quiz button -->
+  <form method="post" action="{{ url_for('learn_start') }}">
+    <button type="submit" class="btn btn-pu-primary w-100" style="font-size:1.05rem;">
+      <i class="bi bi-lightning-fill"></i>
+      I'm Ready — Start the Quiz ({{ words|length * 2 }} Questions)
+    </button>
+  </form>
+
+  <div class="text-center mt-3">
+    <a href="{{ url_for('index') }}" class="text-muted small">← Back to Home</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function playAudio(path, word) {
+  if (path) {
+    var a = new Audio('/' + path);
+    a.play().catch(function() { browserTTS(word); });
+  } else { browserTTS(word); }
+}
+function browserTTS(word) {
+  if ('speechSynthesis' in window) {
+    var u = new SpeechSynthesisUtterance(word);
+    u.lang = 'pt-PT'; speechSynthesis.speak(u);
+  }
+}
+</script>
+{% endblock %}

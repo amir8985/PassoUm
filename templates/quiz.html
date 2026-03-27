@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Question {{ current }}/{{ total }}{% endblock %}
+
+{% block head_extra %}
+<style>
+  .quiz-card {
+    max-width: 720px; margin: 0 auto;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.11);
+  }
+  .passage-box {
+    background: linear-gradient(135deg, #eaf4ff, #d9ecff);
+    border-left: 5px solid #3498db;
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    font-size: 1.02rem;
+    line-height: 1.75;
+    margin-bottom: 1.4rem;
+  }
+  .audio-box {
+    background: #fff8e1;
+    border-left: 5px solid #f39c12;
+    border-radius: 10px;
+    padding: .9rem 1.2rem;
+    margin-bottom: 1.4rem;
+  }
+  .question-text {
+    font-size: 1.15rem; font-weight: 700;
+    color: #1a1a2e; line-height: 1.5;
+  }
+
+  /* Options */
+  input[type="radio"] { display: none; }
+  .option-label {
+    display: flex; align-items: center; gap: .9rem;
+    padding: .8rem 1.1rem;
+    border: 2px solid #e0e4ec;
+    border-radius: 12px; cursor: pointer;
+    background: #fff;
+    transition: border-color .18s, background .18s, transform .12s;
+    font-size: .96rem;
+    user-select: none;
+  }
+  .option-label:hover {
+    border-color: #3498db; background: #eaf4ff;
+    transform: translateX(3px);
+  }
+  input[type="radio"]:checked + .option-label {
+    border-color: #2ecc71; background: #eafaf1; font-weight: 700;
+  }
+  .option-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #eee;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .82rem; flex-shrink: 0;
+    transition: background .18s;
+  }
+  input[type="radio"]:checked + .option-label .option-circle {
+    background: #2ecc71; color: #fff;
+  }
+
+  .cat-pill {
+    font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; padding: .25em .75em;
+    border-radius: 50px;
+  }
+  .cat-reading   { background:#d9ecff; color:#1565c0; }
+  .cat-listening { background:#fff3cd; color:#7d4e00; }
+  .cat-grammar   { background:#e8f5e9; color:#1b5e20; }
+  .cat-vocabulary{ background:#f3e5f5; color:#4a148c; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Progress bar -->
+  <div class="quiz-progress mb-4" style="max-width:720px; margin:0 auto;">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <small class="text-muted fw-bold">
+        {% if quiz_type == 'learn' %}📖 Learn Quiz
+        {% elif quiz_type == 'exam' %}🎓 Mock Exam
+        {% else %}🔄 Practice
+        {% endif %}
+      </small>
+      <small class="text-muted fw-bold">Question {{ current }} of {{ total }}</small>
+    </div>
+    <div class="progress">
+      <div class="progress-bar" role="progressbar"
+           style="width:{{ progress_pct }}%"
+           aria-valuenow="{{ progress_pct }}"
+           aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+  </div>
+
+  <div class="card quiz-card p-4 p-md-5">
+
+    <!-- Category badge -->
+    <div class="mb-3">
+      <span class="cat-pill cat-{{ question.category }}">
+        {% if question.category == 'reading' %}   📖 Reading
+        {% elif question.category == 'listening' %}🎧 Listening
+        {% elif question.category == 'grammar' %}  ✏️ Grammar
+        {% else %}                                 💬 Vocabulary
+        {% endif %}
+      </span>
+    </div>
+
+    <!-- Passage (reading) -->
+    {% if passage_text %}
+    <div class="passage-box">
+      <div class="text-muted small fw-bold mb-1">
+        <i class="bi bi-file-earmark-text"></i> READING PASSAGE
+      </div>
+      {{ passage_text }}
+    </div>
+    {% endif %}
+
+    <!-- Audio (listening) -->
+    {% if question.audio_path and question.category == 'listening' %}
+    <div class="audio-box">
+      <div class="text-muted small fw-bold mb-2">
+        <i class="bi bi-soundwave"></i> LISTEN BEFORE ANSWERING
+      </div>
+      <audio controls class="w-100" style="border-radius:8px;">
+        <source src="{{ url_for('static', filename=question.audio_path.replace('static/', '')) }}"
+                type="audio/mpeg">
+      </audio>
+    </div>
+    {% endif %}
+
+    <!-- Question -->
+    <p class="question-text mb-4">{{ current }}. {{ question.question_text }}</p>
+
+    <!-- Options -->
+    <form method="post" action="{{ url_for('quiz_answer') }}">
+      <input type="hidden" name="question_id" value="{{ question.id }}">
+      <div class="d-flex flex-column gap-3 mb-4">
+        {% for letter, text in [('A', question.option_a), ('B', question.option_b),
+                                  ('C', question.option_c), ('D', question.option_d)] %}
+        <div>
+          <input type="radio" id="opt{{ letter }}" name="answer"
+                 value="{{ text }}" required>
+          <label for="opt{{ letter }}" class="option-label">
+            <span class="option-circle">{{ letter }}</span>
+            <span>{{ text }}</span>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button type="submit" id="submitBtn" class="btn btn-pu-primary w-100" disabled>
+        {% if current < total %}
+          Next Question <i class="bi bi-arrow-right-circle-fill"></i>
+        {% else %}
+          See Results <i class="bi bi-trophy-fill"></i>
+        {% endif %}
+      </button>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('input[name="answer"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+      document.getElementById('submitBtn').removeAttribute('disabled');
+    });
+  });
+</script>
+{% endblock %}

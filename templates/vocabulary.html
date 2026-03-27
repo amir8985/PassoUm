@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Vocabulário{% endblock %}
+
+{% block head_extra %}
+<style>
+  .word-card {
+    border: 1px solid #e8e8f0;
+    border-radius: 10px;
+    padding: .6rem 1rem;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    transition: box-shadow .2s, transform .15s;
+  }
+  .word-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    transform: translateY(-2px);
+  }
+  .word-pt { font-weight: 700; font-size: 1rem; color: #1a1a2e; }
+  .word-en { color: #7f8c8d; font-size: .88rem; }
+  .cat-badge {
+    font-size: .65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; padding: .2em .6em;
+    border-radius: 50px; white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cat-verb        { background: #e8f5e9; color: #1b5e20; }
+  .cat-noun        { background: #e3f2fd; color: #0d47a1; }
+  .cat-adjective   { background: #fce4ec; color: #880e4f; }
+  .cat-adverb      { background: #fff3e0; color: #e65100; }
+  .cat-phrase      { background: #f3e5f5; color: #4a148c; }
+  .cat-number      { background: #e0f2f1; color: #004d40; }
+  .cat-pronoun     { background: #fafafa; color: #424242; }
+  .cat-preposition { background: #fff8e1; color: #f57f17; }
+  .audio-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%; border: none;
+    background: #eaf4ff; color: #3498db;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; flex-shrink: 0;
+    cursor: pointer; transition: background .2s;
+  }
+  .audio-btn:hover { background: #3498db; color: #fff; }
+  .filter-btn { border-radius: 50px; font-size: .82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="fw-bold mb-1" style="color:#1a1a2e;">
+    <i class="bi bi-book-fill text-primary"></i> 600 Palavras Essenciais
+  </h2>
+  <p class="text-muted mb-4">Clica no <i class="bi bi-volume-up-fill"></i> para ouvir a pronúncia em Português Europeu.</p>
+
+  <!-- Category filter -->
+  <div class="d-flex flex-wrap gap-2 mb-4" id="catFilters">
+    <button class="btn btn-sm btn-dark filter-btn active" data-cat="all">Todas</button>
+    {% for cat in ['verb','noun','adjective','adverb','phrase','number','pronoun','preposition'] %}
+    <button class="btn btn-sm btn-outline-secondary filter-btn" data-cat="{{ cat }}">
+      {{ cat|capitalize }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <!-- Search -->
+  <div class="mb-4">
+    <input type="text" id="searchBox" class="form-control"
+           placeholder="🔍 Pesquisar palavra ou tradução…"
+           style="max-width:380px; border-radius:50px;">
+  </div>
+
+  <!-- Word grid -->
+  <div class="row g-2" id="wordGrid">
+    {% for w in words %}
+    <div class="col-12 col-sm-6 col-lg-4 word-item" data-cat="{{ w.category }}"
+         data-word="{{ w.word|lower }}" data-trans="{{ w.translation|lower }}">
+      <div class="word-card">
+        <button class="audio-btn" onclick="playWordAudio('{{ w.audio_path }}', '{{ w.word }}')"
+                title="Ouvir pronúncia">
+          <i class="bi bi-volume-up-fill"></i>
+        </button>
+        <div class="flex-grow-1">
+          <div class="word-pt">{{ w.word }}</div>
+          <div class="word-en">{{ w.translation }}</div>
+        </div>
+        <span class="cat-badge cat-{{ w.category }}">{{ w.category }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="noResults" class="text-center text-muted py-5 d-none">
+    Nenhuma palavra encontrada.
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ── Audio playback ──────────────────────────────────────────────
+  function playWordAudio(path, word) {
+    if (path) {
+      const audio = new Audio('/' + path);
+      audio.play().catch(function() {
+        // fallback: browser TTS
+        if ('speechSynthesis' in window) {
+          const utt = new SpeechSynthesisUtterance(word);
+          utt.lang = 'pt-PT';
+          speechSynthesis.speak(utt);
+        }
+      });
+    } else if ('speechSynthesis' in window) {
+      const utt = new SpeechSynthesisUtterance(word);
+      utt.lang = 'pt-PT';
+      speechSynthesis.speak(utt);
+    }
+  }
+
+  // ── Filter by category ──────────────────────────────────────────
+  let activeCat = 'all';
+  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(function(b) {
+        b.classList.remove('active', 'btn-dark');
+        b.classList.add('btn-outline-secondary');
+      });
+      btn.classList.add('active', 'btn-dark');
+      btn.classList.remove('btn-outline-secondary');
+      activeCat = btn.dataset.cat;
+      filterWords();
+    });
+  });
+
+  // ── Search ───────────────────────────────────────────────────────
+  document.getElementById('searchBox').addEventListener('input', filterWords);
+
+  function filterWords() {
+    const q = document.getElementById('searchBox').value.toLowerCase().trim();
+    let visible = 0;
+    document.querySelectorAll('.word-item').forEach(function(item) {
+      const catMatch  = activeCat === 'all' || item.dataset.cat === activeCat;
+      const textMatch = !q ||
+                        item.dataset.word.includes(q) ||
+                        item.dataset.trans.includes(q);
+      if (catMatch && textMatch) {
+        item.style.display = '';
+        visible++;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+    document.getElementById('noResults').classList.toggle('d-none', visible > 0);
+  }
+</script>
+{% endblock %}

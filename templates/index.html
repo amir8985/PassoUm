@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* ── Page shell ────────────────────────────────────────────── */
+  .home-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 2rem 1rem 3rem;
+  }
+
+  /* ── Hero ──────────────────────────────────────────────────── */
+  .hero-title {
+    font-size: clamp(1.9rem, 6vw, 2.6rem);
+    font-weight: 800;
+    color: #1a1a2e;
+    letter-spacing: -.5px;
+    line-height: 1.15;
+  }
+  .hero-sub {
+    font-size: .95rem;
+    color: #6c757d;
+    margin-top: .4rem;
+  }
+
+  /* ── Content statistics row ────────────────────────────────── */
+  .stats-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1.5px solid #e8eaf0;
+    border-radius: 14px;
+    padding: 1rem .6rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+    overflow-x: auto;
+    gap: 0;
+  }
+  .stat-item {
+    text-align: center;
+    flex: 1;
+    padding: .1rem .25rem;
+    min-width: 52px;
+  }
+  .stat-num {
+    font-size: clamp(1.25rem, 4.5vw, 1.75rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -.5px;
+  }
+  .stat-label {
+    font-size: .68rem;
+    color: #9aa0a8;
+    margin-top: .3rem;
+    line-height: 1.3;
+  }
+  .stat-divider {
+    width: 1px;
+    height: 34px;
+    background: #e8eaf0;
+    flex-shrink: 0;
+  }
+
+  /* ── Vocabulary progress bar ────────────────────────────────── */
+  .vocab-progress-card {
+    background: #fff;
+    border: 1.5px solid #e8eaf0;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  }
+  .vocab-progress-card .progress {
+    height: 12px;
+    border-radius: 20px;
+    background: #e9ecef;
+    overflow: visible;
+  }
+  .vocab-bar {
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    border-radius: 20px;
+    height: 100%;
+    transition: width 1.1s cubic-bezier(.4,0,.2,1);
+    width: 0%;   /* animated to target by JS */
+    min-width: 3px;
+  }
+
+  /* ── Action list ────────────────────────────────────────────── */
+  .action-list {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+  }
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #fff;
+    border: 1.5px solid #e8eaf0;
+    border-radius: 16px;
+    padding: 1.1rem 1.2rem;
+    text-decoration: none !important;
+    color: #1a1a2e !important;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s, border-color .18s;
+    min-height: 76px;   /* touch-friendly target */
+    box-shadow: 0 2px 10px rgba(0,0,0,.055);
+  }
+  .action-row:active { transform: scale(.985); }
+  .action-row:hover:not(.action-disabled) {
+    transform: translateX(4px);
+    box-shadow: 0 6px 22px rgba(0,0,0,.1);
+    border-color: #c5c8d0;
+  }
+  .action-row.action-disabled {
+    opacity: .42;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .action-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.55rem;
+    flex-shrink: 0;
+  }
+  .action-body { flex: 1; min-width: 0; }
+  .action-title {
+    font-size: 1rem; font-weight: 800; color: #1a1a2e;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .action-sub {
+    font-size: .78rem; color: #6c757d; margin-top: .12rem;
+    line-height: 1.4;
+  }
+  .action-arrow {
+    font-size: 1.5rem; color: #c8cdd6;
+    font-weight: 700; flex-shrink: 0;
+    line-height: 1;
+  }
+
+  /* Colour accents per card */
+  .icon-green  { background: #eafaf1; color: #27ae60; }
+  .icon-blue   { background: #eaf4ff; color: #2980b9; }
+  .icon-purple { background: #f5eef8; color: #8e44ad; }
+  .icon-orange { background: #fef9e7; color: #e67e22; }
+
+  /* ── Recent exam strip ──────────────────────────────────────── */
+  .exam-strip {
+    background: #fff;
+    border: 1.5px solid #e8eaf0;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.045);
+  }
+  .pill-pass { background:#d4edda; color:#155724; border-radius:50px; padding:.15em .7em; font-weight:700; font-size:.78rem; }
+  .pill-fail { background:#f8d7da; color:#721c24; border-radius:50px; padding:.15em .7em; font-weight:700; font-size:.78rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="home-wrap">
+
+  <!-- Hero -->
+  <div class="text-center mb-4">
+    <div style="font-size:3.5rem; line-height:1.1;">🏰</div>
+    <h1 class="hero-title mt-2">
+      Bem-vindo ao <span style="color:#2ecc71;">PassoUm</span>
+    </h1>
+    <p class="hero-sub">European Portuguese (pt-PT) — Level A1</p>
+  </div>
+
+  <!-- Vocabulary progress bar -->
+  <div class="vocab-progress-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="fw-bold" style="font-size:.85rem; color:#555;">
+        <i class="bi bi-bar-chart-fill" style="color:#2ecc71;"></i>
+        Vocabulary Mastery
+      </span>
+      <span class="fw-bold" style="font-size:.85rem; color:#27ae60;">
+        {{ mastered_count }} / 600 words
+      </span>
+    </div>
+    <div class="progress">
+      <div class="vocab-bar"
+           data-target="{{ [(mastered_count / 600 * 100)|round|int, 100]|min }}"
+           role="progressbar"
+           aria-valuenow="{{ mastered_count }}"
+           aria-valuemin="0"
+           aria-valuemax="600">
+      </div>
+    </div>
+    {% if mastered_count == 0 %}
+    <p class="text-muted small mb-0 mt-2">Start with 'Learn New Words' to begin tracking your progress.</p>
+    {% endif %}
+  </div>
+
+  <!-- Vertical action list -->
+  <div class="action-list mb-4">
+
+    <!-- 1. Practice Known Words -->
+    <a href="{{ url_for('practice') if mastered_count > 0 else '#' }}"
+       class="action-row {{ 'action-disabled' if mastered_count == 0 else '' }}">
+      <div class="action-icon icon-blue">🔄</div>
+      <div class="action-body">
+        <div class="action-title">Practice Known Words</div>
+        <div class="action-sub">
+          {% if mastered_count > 0 %}
+            {{ mastered_count }} word{{ 's' if mastered_count != 1 else '' }} ready to review &nbsp;·&nbsp; Spaced repetition
+          {% else %}
+            Unlock by completing a Learn session
+          {% endif %}
+        </div>
+      </div>
+      <div class="action-arrow">›</div>
+    </a>
+
+    <!-- 2. Learn New Words -->
+    <a href="{{ url_for('learn_words') }}" class="action-row">
+      <div class="action-icon icon-green">📖</div>
+      <div class="action-body">
+        <div class="action-title">Learn New Words</div>
+        <div class="action-sub">10 new words with audio · instant quiz feedback</div>
+      </div>
+      <div class="action-arrow">›</div>
+    </a>
+
+    <!-- 3. Grammar Practice (disabled) -->
+    <div class="action-row action-disabled">
+      <div class="action-icon icon-purple">✏️</div>
+      <div class="action-body">
+        <div class="action-title">Grammar Practice</div>
+        <div class="action-sub">A1 verbs, articles, prepositions &nbsp;·&nbsp; Coming soon</div>
+      </div>
+      <div class="action-arrow" style="opacity:.3;">›</div>
+    </div>
+
+    <!-- 4. A1 Mock Exam -->
+    <a href="{{ url_for('exam') }}" class="action-row">
+      <div class="action-icon icon-orange">🎓</div>
+      <div class="action-body">
+        <div class="action-title">A1 Certification Mock Exam</div>
+        <div class="action-sub">20 questions · Reading, Listening, Grammar</div>
+      </div>
+      <div class="action-arrow">›</div>
+    </a>
+
+  </div>
+
+  <!-- Recent exam strip (compact) -->
+  {% if exam_history %}
+  <div class="exam-strip">
+    <div class="fw-bold small text-muted mb-2" style="text-transform:uppercase; letter-spacing:.05em; font-size:.72rem;">
+      <i class="bi bi-clock-history text-warning"></i>&nbsp; Recent Exam Attempts
+    </div>
+    <div class="d-flex flex-column gap-1">
+      {% for s in exam_history %}
+      <div class="d-flex align-items-center justify-content-between" style="font-size:.85rem;">
+        <span class="text-muted">{{ s.taken_at[:10] }}</span>
+        <span class="fw-bold">{{ s.correct }}/{{ s.total }}</span>
+        {% if s.score_pct >= 80 %}
+          <span class="pill-pass">PASS</span>
+        {% else %}
+          <span class="pill-fail">FAIL</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="text-end mt-2">
+      <a href="{{ url_for('exam') }}" class="text-muted small">All attempts →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Content statistics row — bottom of page -->
+  <div class="stats-row mt-4">
+
+    <div class="stat-item">
+      <div class="stat-num" style="color:#2ecc71;">{{ content_stats.vocabulary_words or 600 }}</div>
+      <div class="stat-label">Total Words</div>
+    </div>
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-item">
+      <div class="stat-num" style="color:#3498db;">
+        {% set vq = content_stats.questions_vocabulary or 1800 %}
+        {{ vq }}{% if vq >= 1000 %}+{% endif %}
+      </div>
+      <div class="stat-label">Vocab Questions</div>
+    </div>
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-item">
+      <div class="stat-num" style="color:#e67e22;">{{ content_stats.questions_reading or 150 }}</div>
+      <div class="stat-label">Reading Tasks</div>
+    </div>
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-item">
+      <div class="stat-num" style="color:#9b59b6;">{{ content_stats.questions_listening or 80 }}</div>
+      <div class="stat-label">Audio Clips</div>
+    </div>
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-item">
+      <div class="stat-num" style="color:#e74c3c;">{{ content_stats.questions_grammar or 300 }}</div>
+      <div class="stat-label">Grammar Exercises</div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Animate the vocabulary progress bar on page load
+  window.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+      var bar = document.querySelector('.vocab-bar');
+      if (bar) bar.style.width = bar.dataset.target + '%';
+    }, 250);
+  });
+</script>
+{% endblock %}

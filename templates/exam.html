@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}A1 Mock Exam{% endblock %}
+
+{% block head_extra %}
+<style>
+  .exam-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    color: #fff;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .exam-detail {
+    display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+    margin-top: 1.2rem;
+  }
+  .exam-detail-item {
+    text-align: center;
+  }
+  .exam-detail-item .num { font-size: 1.6rem; font-weight: 800; color: #f39c12; }
+  .exam-detail-item .lbl { font-size: .75rem; color: rgba(255,255,255,.65); text-transform: uppercase; }
+
+  .history-card {
+    border-radius: 14px;
+    border: 1.5px solid #e8eaf0;
+    background: #fff;
+    padding: .9rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: box-shadow .15s;
+  }
+  .history-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+  .score-badge {
+    min-width: 56px;
+    text-align: center;
+    border-radius: 10px;
+    padding: .4rem .6rem;
+    font-weight: 800;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .score-pass { background: #d4edda; color: #155724; }
+  .score-fail { background: #f8d7da; color: #721c24; }
+  .score-mid  { background: #fff3cd; color: #7d4e00; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 680px;">
+
+  <!-- Hero -->
+  <div class="exam-hero">
+    <div style="font-size:3rem;">🎓</div>
+    <h2 class="fw-bold mt-2 mb-1">A1 Certification Mock Exam</h2>
+    <p style="color:rgba(255,255,255,.7); font-size:.95rem;">
+      Simulate the real European Portuguese A1 exam format.
+    </p>
+    <div class="exam-detail">
+      <div class="exam-detail-item">
+        <div class="num">5</div>
+        <div class="lbl">Reading</div>
+      </div>
+      <div class="exam-detail-item">
+        <div class="num">5</div>
+        <div class="lbl">Listening</div>
+      </div>
+      <div class="exam-detail-item">
+        <div class="num">10</div>
+        <div class="lbl">Grammar</div>
+      </div>
+      <div class="exam-detail-item">
+        <div class="num">20</div>
+        <div class="lbl">Total</div>
+      </div>
+    </div>
+    <form method="post" action="{{ url_for('exam_start') }}" class="mt-4">
+      <button type="submit" class="btn btn-pu-primary px-5"
+              style="font-size:1.05rem;">
+        <i class="bi bi-play-circle-fill"></i>
+        Start New Exam
+      </button>
+    </form>
+  </div>
+
+  <!-- Pass criteria -->
+  <div class="card p-3 mb-4"
+       style="background:#eaf4ff; border:1.5px solid #3498db; border-radius:14px;">
+    <div class="fw-bold mb-1" style="color:#1565c0;">
+      <i class="bi bi-info-circle-fill"></i> Pass Criteria
+    </div>
+    <ul class="mb-0 text-muted small" style="padding-left:1.1rem;">
+      <li>Score ≥ <strong>80%</strong> (16 out of 20 questions) to pass.</li>
+      <li>Reading passages are displayed above their questions.</li>
+      <li>Listening clips include an audio player.</li>
+    </ul>
+  </div>
+
+  <!-- Exam history -->
+  {% if history %}
+  <h6 class="fw-bold mb-3">
+    <i class="bi bi-clock-history text-warning"></i>
+    Last {{ history|length }} Attempt{{ 's' if history|length != 1 else '' }}
+  </h6>
+  <div class="d-flex flex-column gap-2">
+    {% for s in history %}
+    {% set pct = s.score_pct|int %}
+    <div class="history-card">
+      <div class="score-badge {{ 'score-pass' if pct >= 80 else ('score-mid' if pct >= 50 else 'score-fail') }}">
+        {{ pct }}%
+      </div>
+      <div class="flex-grow-1">
+        <div class="fw-bold" style="font-size:.95rem;">
+          {{ s.correct }}/{{ s.total }} correct
+        </div>
+        <div class="text-muted small">{{ s.taken_at[:10] }}</div>
+      </div>
+      <div>
+        {% if pct >= 80 %}
+          <span class="badge rounded-pill" style="background:#d4edda;color:#155724;">PASS</span>
+        {% else %}
+          <span class="badge rounded-pill" style="background:#f8d7da;color:#721c24;">FAIL</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-4">
+    <i class="bi bi-clipboard2-x" style="font-size:2.5rem;"></i>
+    <p class="mt-2 mb-0">No exam history yet.</p>
+    <p class="small">Take your first mock exam above!</p>
+  </div>
+  {% endif %}
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('index') }}" class="text-muted small">← Back to Home</a>
+  </div>
+
+</div>
+{% endblock %}

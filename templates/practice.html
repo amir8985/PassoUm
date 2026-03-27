@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Practice Known Words{% endblock %}
+
+{% block head_extra %}
+<style>
+  .practice-wrap { max-width: 540px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+
+  /* ── Stat tiles ────────────────────────────────────────────── */
+  .stat-tile {
+    border-radius: 14px;
+    padding: 1.1rem;
+    text-align: center;
+  }
+  .stat-tile .stat-num {
+    font-size: 2rem; font-weight: 900; line-height: 1;
+  }
+  .stat-tile .stat-lbl {
+    font-size: .78rem; color: #6c757d; margin-top: .25rem;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .tile-green  { background: #eafaf1; }
+  .tile-blue   { background: #eaf4ff; }
+
+  /* ── Info strip ────────────────────────────────────────────── */
+  .info-strip {
+    background: #f8f9fa;
+    border: 1.5px solid #e8eaf0;
+    border-radius: 10px;
+    padding: .7rem 1rem;
+    font-size: .85rem;
+    color: #555;
+  }
+
+  /* ── How-it-works list ─────────────────────────────────────── */
+  .how-item {
+    display: flex; align-items: flex-start; gap: .7rem;
+    font-size: .88rem; color: #555;
+    padding: .35rem 0;
+  }
+  .how-dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #3498db; color: #fff;
+    font-size: .72rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: .05rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="practice-wrap">
+
+  <!-- Header -->
+  <div class="text-center mb-4">
+    <div style="font-size:3rem; line-height:1.1;">🔄</div>
+    <h2 class="fw-bold mt-2" style="color:#1a1a2e;">Practice Known Words</h2>
+    <p class="text-muted" style="font-size:.93rem;">
+      Step-by-step review with instant feedback. Words you miss will come back.
+    </p>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-3 mb-3">
+    <div class="col-6">
+      <div class="stat-tile tile-green">
+        <div class="stat-num" style="color:#27ae60;">{{ mastered_count }}</div>
+        <div class="stat-lbl">Words mastered</div>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="stat-tile tile-blue">
+        {% if last_info %}
+        <div class="stat-num" style="color:#2980b9;">
+          {{ last_info.correct }}<span style="font-size:1.1rem; font-weight:600;">/{{ last_info.count }}</span>
+        </div>
+        <div class="stat-lbl">Last score</div>
+        {% else %}
+        <div class="stat-num" style="color:#bbb;">—</div>
+        <div class="stat-lbl">No previous session</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Last session details strip -->
+  {% if last_info %}
+  <div class="info-strip mb-4">
+    <i class="bi bi-clock-history text-warning"></i>
+    Last Session: <strong>{{ last_info.date }}</strong>
+    &nbsp;·&nbsp;
+    Score: <strong>{{ last_info.correct }}/{{ last_info.count }}</strong> successful words
+  </div>
+  {% else %}
+  <div class="info-strip mb-4" style="color:#aaa;">
+    <i class="bi bi-info-circle"></i>
+    No previous practice session — this will be your first!
+  </div>
+  {% endif %}
+
+  <!-- How it works -->
+  <div class="card p-3 mb-4" style="border-radius:14px; background:#fefefe;">
+    <div class="fw-bold small text-muted mb-2" style="text-transform:uppercase; letter-spacing:.05em; font-size:.72rem;">
+      How it works
+    </div>
+    <div class="how-item">
+      <span class="how-dot">1</span>
+      <span>You'll see <strong>10 words</strong> from your mastered list — one question at a time.</span>
+    </div>
+    <div class="how-item">
+      <span class="how-dot">2</span>
+      <span>Each option click shows <strong>instant green/red feedback</strong>.</span>
+    </div>
+    <div class="how-item">
+      <span class="how-dot">3</span>
+      <span>Words you miss are <strong>prioritised</strong> in the next practice round.</span>
+    </div>
+    <div class="how-item">
+      <span class="how-dot">4</span>
+      <span>Score <strong>9 or 10 words</strong> perfectly to earn an "Excellent" rating.</span>
+    </div>
+  </div>
+
+  <!-- Start button -->
+  <form method="post" action="{{ url_for('practice_start') }}">
+    <button type="submit" class="btn btn-pu-primary w-100 py-3"
+            style="font-size:1.05rem; border-radius:14px;">
+      <i class="bi bi-play-circle-fill"></i>&nbsp; Start Practice (10 words)
+    </button>
+  </form>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('index') }}" class="text-muted small">
+      <i class="bi bi-arrow-left"></i> Back to Home
+    </a>
+  </div>
+
+</div>
+{% endblock %}
