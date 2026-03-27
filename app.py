@@ -40,10 +40,13 @@ def create_app() -> Flask:
     return app
 
 
+# Module-level instance so Gunicorn can find it with:  gunicorn app:app
+log.info("Initialising user.db …")
+init_user_db()
+log.info("Starting PassoUm %s", __version__)
+app = create_app()
+
+
 if __name__ == "__main__":
-    log.info("Initialising user.db …")
-    init_user_db()
-    log.info("Starting PassoUm %s", __version__)
-    app = create_app()
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=FlaskConfig.DEBUG)
