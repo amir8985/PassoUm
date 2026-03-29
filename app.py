@@ -2,18 +2,20 @@
 PassoUm — European Portuguese Learning App
 Version: sourced from version.py (single source of truth)
 """
-from version import __version__
-
-import os
-
+# load_dotenv() MUST be the very first executable line so that
+# FLASK_DEBUG (and any other env vars) are in os.environ before
+# config.py evaluates FlaskConfig.DEBUG at class-definition time.
 from dotenv import load_dotenv
+load_dotenv()
+
+from version import __version__
+import os
 from flask import Flask
 
 from config import FlaskConfig, APP_VERSION, get_logger
 from models import init_user_db
 from routes import register_routes
 
-load_dotenv()
 log = get_logger(__name__)
 
 
@@ -48,5 +50,8 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=FlaskConfig.DEBUG)
+    port      = int(os.getenv("PORT", 5000))
+    debug_on  = FlaskConfig.DEBUG
+    app.run(host="0.0.0.0", port=port, debug=debug_on, use_reloader=debug_on)
+    # When FLASK_DEBUG=1 in .env, Flask watches every .py and .html for changes
+    # and reloads automatically — no need to stop/start the server manually.
