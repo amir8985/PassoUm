@@ -238,8 +238,12 @@ function renderExamForm() {
     html += '<span class="cat-pill cat-' + q.category + '">' + (catLabels[q.category]||q.category) + '</span>';
     html += '</div>';
 
-    if (q.audio_path && q.category === 'listening') {
-      html += '<div class="audio-box"><div class="small fw-bold mb-2" style="color:#7d4e00;"><i class="bi bi-soundwave"></i> LISTEN BEFORE ANSWERING</div>' +
+    if (q.audio_path) {
+      var isVocabAudio = (q.category === 'vocabulary');
+      var audioLabel   = isVocabAudio
+        ? '<i class="bi bi-volume-up-fill"></i> LISTEN TO THIS WORD'
+        : '<i class="bi bi-soundwave"></i> LISTEN BEFORE ANSWERING';
+      html += '<div class="audio-box"><div class="small fw-bold mb-2" style="color:#7d4e00;">' + audioLabel + '</div>' +
               '<audio controls class="w-100" style="border-radius:8px;"><source src="/' + esc(q.audio_path) + '" type="audio/mpeg"></audio></div>';
     }
 
@@ -356,8 +360,12 @@ function renderReview(correct, total, skipped) {
     html += '<div class="d-flex align-items-center gap-2"><span class="cat-pill cat-' + q.category + '">' + (catLabels[q.category]||q.category) + '</span>' + resultBadge + '</div>';
     html += '</div>';
 
-    if (q.audio_path && q.category === 'listening') {
-      html += '<div class="audio-box"><div class="small fw-bold mb-2" style="color:#7d4e00;"><i class="bi bi-soundwave"></i> TRANSCRIPT AUDIO</div>' +
+    if (q.audio_path) {
+      var isVocabAudioRv = (q.category === 'vocabulary');
+      var rvAudioLabel   = isVocabAudioRv
+        ? '<i class="bi bi-volume-up-fill"></i> WORD AUDIO'
+        : '<i class="bi bi-soundwave"></i> TRANSCRIPT AUDIO';
+      html += '<div class="audio-box"><div class="small fw-bold mb-2" style="color:#7d4e00;">' + rvAudioLabel + '</div>' +
               '<audio controls class="w-100" style="border-radius:8px;"><source src="/' + esc(q.audio_path) + '" type="audio/mpeg"></audio></div>';
     }
 
