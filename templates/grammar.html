@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Grammar Practice{% endblock %}
+
+{% block head_extra %}
+<style>
+  .grammar-wrap { max-width: 620px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+
+  /* ── Verb cards grid ─────────────────────────────────────── */
+  .verb-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 3px 16px rgba(0,0,0,.08);
+    transition: transform .15s, box-shadow .15s;
+    display: flex; flex-direction: column;
+    height: 100%;
+  }
+  .verb-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.13); }
+  .verb-card-header {
+    padding: 1.1rem 1.3rem;
+    color: #fff;
+    display: flex; align-items: center; gap: .7rem;
+  }
+  .verb-name {
+    font-size: 1.6rem; font-weight: 900; letter-spacing: -.5px;
+    line-height: 1;
+  }
+  .verb-sub-title {
+    font-size: .75rem; opacity: .88; text-transform: uppercase;
+    letter-spacing: .07em; margin-top: .2rem;
+  }
+  .verb-card-body {
+    padding: .95rem 1.2rem 1.2rem;
+    flex: 1; display: flex; flex-direction: column; gap: .6rem;
+  }
+  .verb-desc { font-size: .83rem; color: #6c757d; line-height: 1.4; }
+  .verb-stars { display: flex; gap: .2rem; align-items: center; }
+  .verb-best { font-size: .75rem; color: #aaa; margin-left: .4rem; }
+
+  /* SER = blue, ESTAR = green, TER = amber, IR = red */
+  .hdr-ser   { background: linear-gradient(135deg,#3498db,#2980b9); }
+  .hdr-estar { background: linear-gradient(135deg,#2ecc71,#27ae60); }
+  .hdr-ter   { background: linear-gradient(135deg,#f39c12,#e67e22); }
+  .hdr-ir    { background: linear-gradient(135deg,#e74c3c,#c0392b); }
+
+  .btn-ser   { border-color:#3498db!important; color:#3498db!important; }
+  .btn-ser:hover   { background:#3498db!important; color:#fff!important; }
+  .btn-estar { border-color:#27ae60!important; color:#27ae60!important; }
+  .btn-estar:hover { background:#27ae60!important; color:#fff!important; }
+  .btn-ter   { border-color:#e67e22!important; color:#e67e22!important; }
+  .btn-ter:hover   { background:#e67e22!important; color:#fff!important; }
+  .btn-ir    { border-color:#e74c3c!important; color:#e74c3c!important; }
+  .btn-ir:hover    { background:#e74c3c!important; color:#fff!important; }
+
+  /* ── Mixed card ──────────────────────────────────────────── */
+  .mixed-card {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 18px; color: #fff;
+    padding: 1.8rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 6px 24px rgba(0,0,0,.2);
+  }
+  .mixed-card h4 { font-weight: 800; font-size: 1.25rem; margin-bottom: .3rem; }
+  .mixed-card p  { color: rgba(255,255,255,.65); font-size: .9rem; margin-bottom: 1rem; }
+  .mixed-best-strip {
+    background: rgba(255,255,255,.08); border-radius: 8px;
+    padding: .4rem .9rem; display: inline-block; font-size: .82rem;
+    color: rgba(255,255,255,.7); margin-bottom: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grammar-wrap">
+
+  <!-- Header -->
+  <div class="text-center mb-4">
+    <div style="font-size:3rem; line-height:1.1;">📚</div>
+    <h2 class="fw-bold mt-2" style="color:#1a1a2e;">Grammar Practice</h2>
+    <p class="text-muted" style="font-size:.93rem;">
+      Master the 4 essential A1 verbs — with conjugation tables, rules, and quizzes.
+    </p>
+  </div>
+
+  <!-- 4 Verb Cards (2×2 on sm+, stacked on mobile) -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-12 col-sm-6">
+      <div class="verb-card">
+        <div class="verb-card-header hdr-ser">
+          <div>
+            <div class="verb-name">SER</div>
+            <div class="verb-sub-title">To Be · Permanent</div>
+          </div>
+        </div>
+        <div class="verb-card-body">
+          <div class="verb-desc">Identity · Profession · Origin · Characteristics</div>
+          <div class="verb-stars" id="stars-ser">—</div>
+          <a href="/grammar/ser" class="btn btn-sm btn-outline-primary btn-ser w-100 mt-auto" style="border-radius:50px;font-weight:700;">
+            Study &amp; Practice →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6">
+      <div class="verb-card">
+        <div class="verb-card-header hdr-estar">
+          <div>
+            <div class="verb-name">ESTAR</div>
+            <div class="verb-sub-title">To Be · Temporary</div>
+          </div>
+        </div>
+        <div class="verb-card-body">
+          <div class="verb-desc">States · Location · Ongoing action</div>
+          <div class="verb-stars" id="stars-estar">—</div>
+          <a href="/grammar/estar" class="btn btn-sm btn-outline-success btn-estar w-100 mt-auto" style="border-radius:50px;font-weight:700;">
+            Study &amp; Practice →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6">
+      <div class="verb-card">
+        <div class="verb-card-header hdr-ter">
+          <div>
+            <div class="verb-name">TER</div>
+            <div class="verb-sub-title">To Have</div>
+          </div>
+        </div>
+        <div class="verb-card-body">
+          <div class="verb-desc">Possession · Physical states · Age</div>
+          <div class="verb-stars" id="stars-ter">—</div>
+          <a href="/grammar/ter" class="btn btn-sm btn-outline-warning btn-ter w-100 mt-auto" style="border-radius:50px;font-weight:700;">
+            Study &amp; Practice →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6">
+      <div class="verb-card">
+        <div class="verb-card-header hdr-ir">
+          <div>
+            <div class="verb-name">IR</div>
+            <div class="verb-sub-title">To Go · Near Future</div>
+          </div>
+        </div>
+        <div class="verb-card-body">
+          <div class="verb-desc">Movement · Future intention</div>
+          <div class="verb-stars" id="stars-ir">—</div>
+          <a href="/grammar/ir" class="btn btn-sm btn-outline-danger btn-ir w-100 mt-auto" style="border-radius:50px;font-weight:700;">
+            Study &amp; Practice →
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Mixed Practice card -->
+  <div class="mixed-card mb-4">
+    <h4>🎯 Mixed Grammar Practice</h4>
+    <p>20 questions across all 4 verbs — the ultimate challenge.</p>
+    <div id="mixedBestStrip"></div>
+    <div class="mb-3" id="stars-mixed" style="font-size:1.1rem;"></div>
+    <a href="/grammar/mixed" class="btn btn-pu-primary px-4" style="font-size:1rem;">
+      <i class="bi bi-shuffle"></i>&nbsp; Start Mixed Practice
+    </a>
+  </div>
+
+  <div class="text-center">
+    <a href="/" class="text-muted small">← Back to Home</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  var p  = loadProgress();
+  var gr = p.grammar;
+
+  ['ser','estar','ter','ir'].forEach(function(verb) {
+    var el = document.getElementById('stars-' + verb);
+    var s  = gr[verb];
+    if (s.best > 0) {
+      el.innerHTML = starsHtml(s.stars) +
+        '<span class="verb-best ms-2">Best: ' + s.best + '/10</span>';
+    } else {
+      el.innerHTML = '<span class="text-muted small">Not attempted yet</span>';
+    }
+  });
+
+  // Mixed
+  var ms = gr.mixed;
+  var mixedEl = document.getElementById('stars-mixed');
+  if (ms.best > 0) {
+    mixedEl.innerHTML = starsHtml(ms.stars);
+    document.getElementById('mixedBestStrip').innerHTML =
+      '<div class="mixed-best-strip">Best score: ' + ms.best + '/20</div>';
+  } else {
+    mixedEl.innerHTML = '<span style="color:rgba(255,255,255,.4);font-size:.85rem;">Not attempted yet</span>';
+  }
+});
+</script>
+{% endblock %}

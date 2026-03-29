@@ -32,6 +32,8 @@ from models import (
     get_vocab_list,
 )
 
+_GRAMMAR_VERBS = {'ser', 'estar', 'ter', 'ir'}
+
 log = get_logger(__name__)
 
 
@@ -128,6 +130,22 @@ def register_routes(app: Flask) -> None:
             return err
         log.info("GET /api/exam")
         return jsonify(get_exam_bundle())
+
+    @app.route("/grammar")
+    def grammar():
+        log.info("GET /grammar")
+        return render_template("grammar.html")
+
+    @app.route("/grammar/<verb>")
+    def grammar_verb(verb):
+        if verb == "mixed":
+            log.info("GET /grammar/mixed")
+            return render_template("grammar_mixed.html")
+        if verb not in _GRAMMAR_VERBS:
+            return render_template("error.html",
+                                   message=f"Unknown grammar topic: {verb}"), 404
+        log.info("GET /grammar/%s", verb)
+        return render_template("grammar_verb.html", verb=verb)
 
     @app.route("/db-status")
     def db_status():

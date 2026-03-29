@@ -1,0 +1,775 @@
+{% extends "base.html" %}
+{% block title %}Grammar — {{ verb|upper }}{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* ── Conjugation table ──────────────────────────────────── */
+  .conj-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:14px; overflow:hidden; box-shadow:0 3px 14px rgba(0,0,0,.09); margin-bottom:2rem; }
+  .conj-table thead th { padding:.75rem 1.2rem; color:#fff; font-weight:700; font-size:.82rem; text-transform:uppercase; letter-spacing:.07em; }
+  .conj-table tbody tr:nth-child(odd)  td { background:#f8f9fa; }
+  .conj-table tbody tr:nth-child(even) td { background:#fff; }
+  .conj-table tbody tr:hover td { background:#fffde7; }
+  .conj-table td { padding:.7rem 1.2rem; font-size:.96rem; border-bottom:1px solid #eee; }
+  .conj-pronoun { color:#555; font-weight:600; }
+  .conj-form    { font-weight:800; font-size:1.08rem; }
+
+  /* ── Rules & Examples ───────────────────────────────────── */
+  .rule-item { display:flex; gap:.8rem; padding:.55rem 0; align-items:flex-start; font-size:.9rem; color:#444; }
+  .rule-dot  { width:8px; height:8px; border-radius:50%; margin-top:.4rem; flex-shrink:0; }
+  .example-item { background:#fff; border-radius:10px; padding:.7rem 1rem; border-left:4px solid #eee; font-size:.95rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+  .ex-pt { font-weight:700; color:#1a1a2e; }
+  .ex-en { font-size:.82rem; color:#7f8c8d; white-space:nowrap; }
+
+  /* ── Quiz ───────────────────────────────────────────────── */
+  .learn-card { border-radius:18px; box-shadow:0 8px 32px rgba(0,0,0,.11); }
+  .score-counter { background:var(--pu-dark); color:#fff; border-radius:50px; padding:.5rem 1.3rem; display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:.88rem; margin-bottom:1rem; }
+  .score-value { color:#2ecc71; font-size:1.1rem; font-weight:800; }
+  .score-denom { color:rgba(255,255,255,.5); }
+  .option-btn { display:flex; align-items:center; gap:.9rem; padding:.85rem 1.1rem; border:2px solid #e0e4ec; border-radius:12px; cursor:pointer; background:#fff; transition:border-color .18s,background .18s,transform .12s; font-size:.96rem; user-select:none; }
+  .option-btn:hover:not(.locked){ border-color:#3498db; background:#eaf4ff; transform:translateX(3px); }
+  .option-btn.locked{ cursor:default; pointer-events:none; }
+  .option-btn.opt-correct  { border-color:#2ecc71!important; background:#eafaf1!important; font-weight:700; }
+  .option-btn.opt-incorrect{ border-color:#e74c3c!important; background:#fdf2f2!important; }
+  .option-circle { width:32px; height:32px; border-radius:50%; background:#eee; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.82rem; flex-shrink:0; transition:background .18s,color .18s; }
+  .opt-correct  .option-circle { background:#2ecc71; color:#fff; }
+  .opt-incorrect .option-circle { background:#e74c3c; color:#fff; }
+  .feedback-box { border-radius:10px; padding:.8rem 1.1rem; font-weight:700; font-size:.95rem; display:none; align-items:center; gap:.5rem; animation:fadeIn .25s ease; }
+  .feedback-box.show { display:flex; }
+  .feedback-correct  { background:#eafaf1; color:#1e8449; border:1.5px solid #2ecc71; }
+  .feedback-incorrect{ background:#fdf2f2; color:#922b21; border:1.5px solid #e74c3c; }
+  @keyframes fadeIn{ from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+  /* ── Results ────────────────────────────────────────────── */
+  .score-ring { width:120px; height:120px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 1rem; font-weight:800; color:#fff; font-size:1.8rem; box-shadow:0 6px 24px rgba(0,0,0,.15); }
+  .ring-great{ background:linear-gradient(135deg,#2ecc71,#27ae60); }
+  .ring-good { background:linear-gradient(135deg,#f39c12,#e67e22); }
+  .ring-poor { background:linear-gradient(135deg,#e74c3c,#c0392b); }
+  .pool-chip { font-size:.75rem; color:#888; background:#f1f3f5; border-radius:50px; padding:.25em .85em; display:inline-block; margin-top:.3rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:720px;">
+
+  <!-- ── Study section ─────────────────────────────────────── -->
+  <div id="sStudy">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="/grammar" class="btn btn-sm btn-outline-secondary" style="border-radius:50px;font-weight:700;">
+        <i class="bi bi-arrow-left"></i> Grammar
+      </a>
+      <div>
+        <h2 class="fw-bold mb-0" style="color:#1a1a2e;" id="pageTitle"></h2>
+        <div class="text-muted small" id="pageSubtitle"></div>
+      </div>
+    </div>
+
+    <div class="card mb-4 p-0" style="border-radius:14px;overflow:hidden;">
+      <div style="padding:.9rem 1.3rem;" id="tableHeader">
+        <span class="fw-bold" style="color:#fff;font-size:.88rem;text-transform:uppercase;letter-spacing:.07em;">Presente do Indicativo</span>
+      </div>
+      <table class="conj-table">
+        <thead id="conjHead"><tr><th style="width:55%;">Pronoun</th><th>Form</th></tr></thead>
+        <tbody id="conjBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card p-3 mb-4" style="border-radius:14px;">
+      <div class="fw-bold small text-uppercase text-muted mb-2" style="letter-spacing:.06em;font-size:.72rem;">
+        <i class="bi bi-lightbulb-fill" style="color:#f39c12;"></i>&nbsp; When to use
+      </div>
+      <div id="rulesList" class="d-flex flex-column gap-1"></div>
+    </div>
+
+    <div class="card p-3 mb-4" style="border-radius:14px;">
+      <div class="fw-bold small text-uppercase text-muted mb-2" style="letter-spacing:.06em;font-size:.72rem;">
+        <i class="bi bi-chat-quote-fill" style="color:#3498db;"></i>&nbsp; Example sentences
+      </div>
+      <div id="examplesList" class="d-flex flex-column gap-2"></div>
+    </div>
+
+    <div class="card p-4 mb-4 text-center" style="border-radius:14px;background:#fff8e1;border:1.5px solid #f39c12;">
+      <div style="font-size:2rem;">⚡</div>
+      <h5 class="fw-bold mt-2 mb-1">Ready to practise?</h5>
+      <p class="text-muted small mb-1">10 questions per set · 50-question pool · no two sets the same.</p>
+      <div id="studyBest" class="mb-3"></div>
+      <button class="btn btn-pu-primary px-4" onclick="startQuiz()">
+        <i class="bi bi-lightning-fill"></i> Start the Quiz
+      </button>
+    </div>
+
+    <div class="text-center">
+      <a href="/grammar" class="text-muted small">← Back to Grammar</a>
+    </div>
+  </div><!-- /sStudy -->
+
+  <!-- ── Quiz section ──────────────────────────────────────── -->
+  <div id="sQuiz" style="display:none;">
+    <!-- Exit bar -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a href="/grammar" class="btn btn-sm btn-outline-secondary"
+         style="border-radius:50px;font-size:.82rem;font-weight:600;">
+        <i class="bi bi-x-lg"></i>&nbsp;Exit Quiz
+      </a>
+      <span id="verbBadge" class="badge text-white" style="font-size:.82rem;border-radius:50px;padding:.35em .9em;"></span>
+    </div>
+
+    <div class="score-counter">
+      <span style="color:rgba(255,255,255,.6);">Fill in the blank</span>
+      <span>Correct:&nbsp;
+        <span class="score-value" id="qCorrect">0</span>
+        <span class="score-denom"> / </span>
+        <span id="qAnswered">0</span>
+        <span class="score-denom">&nbsp;answered</span>
+      </span>
+    </div>
+
+    <div class="quiz-progress mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <small class="text-muted fw-bold">Progress</small>
+        <small class="text-muted fw-bold">
+          Question <span id="qNum">1</span> of <span id="qTotal">10</span>
+        </small>
+      </div>
+      <div class="progress"><div class="progress-bar" id="qBar" style="width:0%;"></div></div>
+    </div>
+
+    <div class="card learn-card p-4 p-md-5">
+      <p class="fw-bold mb-1 text-muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;">Fill in the blank</p>
+      <p class="mb-4" style="font-size:1.2rem;font-weight:700;color:#1a1a2e;line-height:1.5;" id="qSentence"></p>
+      <div class="d-flex flex-column gap-3 mb-4" id="qOptions"></div>
+      <div class="feedback-box mb-2" id="qFeedback"></div>
+      <button id="qNextBtn" class="btn btn-pu-primary w-100"
+              style="display:none;font-size:1.02rem;" onclick="nextQ()">
+        Next Question &nbsp;<i class="bi bi-arrow-right-circle-fill"></i>
+      </button>
+    </div>
+  </div><!-- /sQuiz -->
+
+  <!-- ── Results section ───────────────────────────────────── -->
+  <div id="sResults" style="display:none;">
+    <div id="resultsContent"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// GRAMMAR DATA  —  50 questions per verb, all client-side, zero server DB
+// Distractors are generated dynamically from the verb's own conjugation forms.
+// ══════════════════════════════════════════════════════════════════════════════
+var VERBS = {
+
+  ser: {
+    title: 'SER', subtitle: 'To Be — Permanent',
+    color: '#3498db', barClass: 'bg-primary',
+    conj: [
+      {pronoun:'Eu',                  form:'sou'},
+      {pronoun:'Tu',                  form:'és'},
+      {pronoun:'Ele / Ela / Você',    form:'é'},
+      {pronoun:'Nós',                 form:'somos'},
+      {pronoun:'Vós',                 form:'sois'},
+      {pronoun:'Eles / Elas / Vocês', form:'são'}
+    ],
+    allForms: ['sou','és','é','somos','sois','são'],
+    rules: [
+      '<strong>Permanent identity</strong>: nationality, origin, profession',
+      '<strong>Inherent characteristics</strong>: appearance, personality',
+      '<strong>Telling time and dates</strong>: São duas horas. / Hoje é segunda-feira.',
+      '<strong>Material / composition</strong>: A mesa é de madeira.',
+      '<strong>Events</strong>: A festa é amanhã à noite.'
+    ],
+    examples: [
+      {pt:'Eu sou de França.',      en:'I am from France.'},
+      {pt:'Tu és professor?',       en:'Are you a teacher?'},
+      {pt:'O Paulo é médico.',      en:'Paulo is a doctor.'},
+      {pt:'Nós somos amigos.',      en:'We are friends.'},
+      {pt:'O carro é vermelho.',    en:'The car is red.'},
+      {pt:'Eles são de Portugal.',  en:'They are from Portugal.'}
+    ],
+    questions: [
+      // sou (10)
+      {s:'Eu ___ de França.',              a:'sou'},
+      {s:'Eu ___ professor.',              a:'sou'},
+      {s:'Eu ___ português.',              a:'sou'},
+      {s:'Eu ___ de Inglaterra.',          a:'sou'},
+      {s:'Eu ___ o filho mais novo.',      a:'sou'},
+      {s:'Eu ___ o mais velho da turma.',  a:'sou'},
+      {s:'Eu ___ advogado.',               a:'sou'},
+      {s:'Eu ___ dentista.',               a:'sou'},
+      {s:'Eu ___ de Coimbra.',             a:'sou'},
+      {s:'Eu ___ médico.',                 a:'sou'},
+      // és (8)
+      {s:'Tu ___ estudante?',              a:'és'},
+      {s:'Tu ___ muito inteligente.',      a:'és'},
+      {s:'Tu ___ de onde?',                a:'és'},
+      {s:'Tu ___ muito criativo.',         a:'és'},
+      {s:'Tu ___ alto e simpático.',       a:'és'},
+      {s:'Tu ___ o melhor aluno.',         a:'és'},
+      {s:'Tu ___ de Portugal ou de Espanha?', a:'és'},
+      {s:'Tu ___ jornalista?',             a:'és'},
+      // é (15)
+      {s:'O Pedro ___ engenheiro.',        a:'é'},
+      {s:'A Maria ___ de Lisboa.',         a:'é'},
+      {s:'O carro ___ novo.',              a:'é'},
+      {s:'Ela ___ médica.',                a:'é'},
+      {s:'O João ___ advogado.',           a:'é'},
+      {s:'O céu ___ azul.',               a:'é'},
+      {s:'A mesa ___ de madeira.',         a:'é'},
+      {s:'O filme ___ muito interessante.',a:'é'},
+      {s:'Hoje ___ segunda-feira.',        a:'é'},
+      {s:'Este ___ o meu livro.',          a:'é'},
+      {s:'Este exercício ___ fácil.',      a:'é'},
+      {s:'A festa ___ amanhã à noite.',    a:'é'},
+      {s:'A rua ___ longa e estreita.',    a:'é'},
+      {s:'Ele ___ jornalista famoso.',     a:'é'},
+      {s:'Esta cidade ___ muito bonita.',  a:'é'},
+      // somos (9)
+      {s:'Nós ___ irmãos.',                a:'somos'},
+      {s:'Nós ___ portugueses.',           a:'somos'},
+      {s:'Nós ___ colegas de trabalho.',   a:'somos'},
+      {s:'Nós ___ da mesma cidade.',       a:'somos'},
+      {s:'Nós ___ de Lisboa.',             a:'somos'},
+      {s:'Nós ___ da mesma família.',      a:'somos'},
+      {s:'Nós ___ os melhores amigos.',    a:'somos'},
+      {s:'Nós ___ de Coimbra.',            a:'somos'},
+      {s:'Nós ___ os novos alunos.',       a:'somos'},
+      // são (8)
+      {s:'Eles ___ muito simpáticos.',     a:'são'},
+      {s:'Vocês ___ amigos?',             a:'são'},
+      {s:'As casas ___ antigas.',          a:'são'},
+      {s:'Eles ___ engenheiros.',          a:'são'},
+      {s:'Eles ___ músicos famosos.',      a:'são'},
+      {s:'A Ana e o Rui ___ namorados.',   a:'são'},
+      {s:'Eles ___ muito trabalhadores.',  a:'são'},
+      {s:'Os alunos ___ muito aplicados.', a:'são'}
+    ]
+  },
+
+  estar: {
+    title: 'ESTAR', subtitle: 'To Be — Temporary',
+    color: '#27ae60', barClass: 'bg-success',
+    conj: [
+      {pronoun:'Eu',                  form:'estou'},
+      {pronoun:'Tu',                  form:'estás'},
+      {pronoun:'Ele / Ela / Você',    form:'está'},
+      {pronoun:'Nós',                 form:'estamos'},
+      {pronoun:'Vós',                 form:'estais'},
+      {pronoun:'Eles / Elas / Vocês', form:'estão'}
+    ],
+    allForms: ['estou','estás','está','estamos','estais','estão'],
+    rules: [
+      '<strong>Temporary states</strong>: feelings, health — estou cansado, estou doente',
+      '<strong>Location</strong>: where people and things are right now',
+      '<strong>Ongoing action</strong>: estar a + infinitive (Está a trabalhar.)',
+      '<strong>States with "com"</strong>: Estou com fome / sede / frio / calor.',
+      '<strong>Key contrast</strong>: SER = permanent · ESTAR = temporary'
+    ],
+    examples: [
+      {pt:'Estou cansado.',           en:'I am tired.'},
+      {pt:'Tu estás bem?',            en:'Are you well?'},
+      {pt:'Estamos em Palmela.',      en:'We are in Palmela.'},
+      {pt:'Ele está a trabalhar.',    en:'He is working.'},
+      {pt:'A chave está na mesa.',    en:'The key is on the table.'},
+      {pt:'Nós estamos em Londres.',  en:'We are in London.'}
+    ],
+    questions: [
+      // estou (10)
+      {s:'Eu ___ cansado.',              a:'estou'},
+      {s:'Eu ___ com fome.',             a:'estou'},
+      {s:'Eu ___ com sede.',             a:'estou'},
+      {s:'Eu ___ muito bem, obrigado.',  a:'estou'},
+      {s:'Eu ___ um pouco nervoso.',     a:'estou'},
+      {s:'Eu ___ a escrever uma carta.', a:'estou'},
+      {s:'Eu ___ a aprender português.', a:'estou'},
+      {s:'Eu ___ com sono.',             a:'estou'},
+      {s:'Eu ___ a estudar para o exame.',a:'estou'},
+      {s:'Eu ___ com calor.',            a:'estou'},
+      // estás (8)
+      {s:'Tu ___ bem?',                  a:'estás'},
+      {s:'Tu ___ em Portugal?',          a:'estás'},
+      {s:'Tu ___ pronto?',               a:'estás'},
+      {s:'Tu ___ a ouvir música?',       a:'estás'},
+      {s:'Tu ___ onde?',                 a:'estás'},
+      {s:'Tu ___ a ver televisão?',      a:'estás'},
+      {s:'Tu ___ a gostar do curso?',    a:'estás'},
+      {s:'Tu ___ a comer?',              a:'estás'},
+      // está (15)
+      {s:'A Maria ___ doente.',              a:'está'},
+      {s:'Ele ___ a trabalhar.',             a:'está'},
+      {s:'A chave ___ na mesa.',             a:'está'},
+      {s:'O Paulo ___ a fazer o jantar.',    a:'está'},
+      {s:'O livro ___ na estante.',          a:'está'},
+      {s:'Ela ___ a falar ao telefone.',     a:'está'},
+      {s:'O cão ___ no jardim.',             a:'está'},
+      {s:'O Pedro ___ doente esta semana.',  a:'está'},
+      {s:'A professora ___ a corrigir os testes.', a:'está'},
+      {s:'O mercado ___ fechado hoje.',      a:'está'},
+      {s:'O avião ___ a aterrar.',           a:'está'},
+      {s:'A sopa ___ quente.',              a:'está'},
+      {s:'O gato ___ em cima do sofá.',      a:'está'},
+      {s:'A porta ___ aberta.',              a:'está'},
+      {s:'Ela ___ de bom humor hoje.',       a:'está'},
+      // estamos (9)
+      {s:'Nós ___ em Lisboa.',               a:'estamos'},
+      {s:'Nós ___ em Palmela.',              a:'estamos'},
+      {s:'Nós ___ com frio.',                a:'estamos'},
+      {s:'Nós ___ a caminho de casa.',       a:'estamos'},
+      {s:'Nós ___ muito ocupados hoje.',     a:'estamos'},
+      {s:'Nós ___ em Londres esta semana.',  a:'estamos'},
+      {s:'Nós ___ na praia.',               a:'estamos'},
+      {s:'Nós ___ prontos para sair.',       a:'estamos'},
+      {s:'Nós ___ de férias.',              a:'estamos'},
+      // estão (8)
+      {s:'Eles ___ em casa.',                a:'estão'},
+      {s:'Eles ___ a estudar.',              a:'estão'},
+      {s:'Eles ___ no café.',               a:'estão'},
+      {s:'Eles ___ no trabalho agora.',      a:'estão'},
+      {s:'As chaves ___ na mala.',           a:'estão'},
+      {s:'Eles ___ a jantar juntos.',        a:'estão'},
+      {s:'Eles ___ no aeroporto.',           a:'estão'},
+      {s:'Eles ___ de férias.',             a:'estão'}
+    ]
+  },
+
+  ter: {
+    title: 'TER', subtitle: 'To Have',
+    color: '#e67e22', barClass: 'bg-warning',
+    conj: [
+      {pronoun:'Eu',                  form:'tenho'},
+      {pronoun:'Tu',                  form:'tens'},
+      {pronoun:'Ele / Ela / Você',    form:'tem'},
+      {pronoun:'Nós',                 form:'temos'},
+      {pronoun:'Vós',                 form:'tendes'},
+      {pronoun:'Eles / Elas / Vocês', form:'têm'}
+    ],
+    allForms: ['tenho','tens','tem','temos','tendes','têm'],
+    rules: [
+      '<strong>Possession</strong>: owning objects, pets, relationships',
+      '<strong>Physical / emotional states</strong>: ter fome, sede, frio, calor, sono',
+      '<strong>Age</strong>: Tenho trinta anos.',
+      '<strong>Obligation</strong>: ter de / ter que + infinitive (Tenho de estudar.)',
+      '<strong>Expressions</strong>: ter razão (to be right) · ter pressa (to be in a hurry)'
+    ],
+    examples: [
+      {pt:'Tenho filhos.',              en:'I have children.'},
+      {pt:'Tu tens fome?',              en:'Are you hungry?'},
+      {pt:'Ela tem um carro novo.',     en:'She has a new car.'},
+      {pt:'Temos uma casa em Palmela.', en:'We have a house in Palmela.'},
+      {pt:'Tens sede?',                 en:'Are you thirsty?'},
+      {pt:'O João tem trinta anos.',    en:'João is thirty years old.'}
+    ],
+    questions: [
+      // tenho (10)
+      {s:'Eu ___ dois filhos.',              a:'tenho'},
+      {s:'Eu ___ sede.',                     a:'tenho'},
+      {s:'Eu ___ um carro novo.',            a:'tenho'},
+      {s:'Eu ___ de estudar mais.',          a:'tenho'},
+      {s:'Eu ___ calor.',                    a:'tenho'},
+      {s:'Eu ___ um problema.',              a:'tenho'},
+      {s:'Eu ___ uma irmã mais velha.',      a:'tenho'},
+      {s:'Eu ___ medo de altura.',           a:'tenho'},
+      {s:'Eu ___ um teste amanhã.',          a:'tenho'},
+      {s:'Eu ___ saudades de Portugal.',     a:'tenho'},
+      // tens (8)
+      {s:'Tu ___ fome?',                     a:'tens'},
+      {s:'Tu ___ um irmão?',                 a:'tens'},
+      {s:'Tu ___ frio?',                     a:'tens'},
+      {s:'Tu ___ muito trabalho?',           a:'tens'},
+      {s:'Tu ___ sono?',                     a:'tens'},
+      {s:'Tu ___ a senha do wifi?',          a:'tens'},
+      {s:'Tu ___ dinheiro para o café?',     a:'tens'},
+      {s:'Tu ___ razão.',                    a:'tens'},
+      // tem (15)
+      {s:'Ela ___ um cão.',                  a:'tem'},
+      {s:'O João ___ vinte anos.',           a:'tem'},
+      {s:'Ela ___ trinta anos.',             a:'tem'},
+      {s:'O Pedro ___ um apartamento em Lisboa.', a:'tem'},
+      {s:'A Maria ___ uma bicicleta nova.',  a:'tem'},
+      {s:'O professor ___ muitos alunos.',   a:'tem'},
+      {s:'Ela ___ olhos azuis.',             a:'tem'},
+      {s:'O João ___ de ir ao médico.',      a:'tem'},
+      {s:'A Ana ___ cabelo comprido.',       a:'tem'},
+      {s:'Ele ___ quarenta anos.',           a:'tem'},
+      {s:'O carro ___ muitos quilómetros.',  a:'tem'},
+      {s:'Ela ___ uma reunião às dez horas.',a:'tem'},
+      {s:'O bebé ___ fome.',                a:'tem'},
+      {s:'Este exercício ___ muitos erros.', a:'tem'},
+      {s:'A cidade ___ um museu bonito.',    a:'tem'},
+      // temos (9)
+      {s:'Nós ___ uma casa.',                a:'temos'},
+      {s:'Nós ___ aulas hoje.',              a:'temos'},
+      {s:'Nós ___ uma reunião amanhã.',      a:'temos'},
+      {s:'Nós ___ um gato em casa.',         a:'temos'},
+      {s:'Nós ___ muito que fazer hoje.',    a:'temos'},
+      {s:'Nós ___ pressa.',                 a:'temos'},
+      {s:'Nós ___ que ir ao supermercado.',  a:'temos'},
+      {s:'Nós ___ uma viagem na próxima semana.', a:'temos'},
+      {s:'Nós ___ muito pouco tempo.',       a:'temos'},
+      // têm (8)
+      {s:'Eles ___ muito dinheiro.',         a:'têm'},
+      {s:'Eles ___ fome.',                  a:'têm'},
+      {s:'Eles ___ aulas de inglês.',        a:'têm'},
+      {s:'Os alunos ___ de fazer os trabalhos.', a:'têm'},
+      {s:'Eles ___ três filhos.',            a:'têm'},
+      {s:'Eles ___ sede também.',            a:'têm'},
+      {s:'Eles ___ dois carros.',            a:'têm'},
+      {s:'Eles ___ paciência.',             a:'têm'}
+    ]
+  },
+
+  ir: {
+    title: 'IR', subtitle: 'To Go — Near Future',
+    color: '#e74c3c', barClass: 'bg-danger',
+    conj: [
+      {pronoun:'Eu',                  form:'vou'},
+      {pronoun:'Tu',                  form:'vais'},
+      {pronoun:'Ele / Ela / Você',    form:'vai'},
+      {pronoun:'Nós',                 form:'vamos'},
+      {pronoun:'Vós',                 form:'ides'},
+      {pronoun:'Eles / Elas / Vocês', form:'vão'}
+    ],
+    allForms: ['vou','vais','vai','vamos','ides','vão'],
+    rules: [
+      '<strong>Movement to a place</strong>: ir a (short visit) / ir para (destination)',
+      '<strong>Near future</strong>: ir + infinitive — Vou estudar amanhã.',
+      '<strong>Future intention / plan</strong>: Nós vamos fazer café.',
+      '<strong>Daily routines</strong>: Vou ao trabalho todos os dias.',
+      '<strong>Invitation / suggestion</strong>: Vamos! (Let\'s go!)'
+    ],
+    examples: [
+      {pt:'Vou ao mercado.',            en:'I am going to the market.'},
+      {pt:'Tu vais à escola?',          en:'Are you going to school?'},
+      {pt:'Ele vai trabalhar amanhã.',  en:'He is going to work tomorrow.'},
+      {pt:'Nós vamos fazer café.',      en:'We are going to make coffee.'},
+      {pt:'Vais ao cinema?',            en:'Are you going to the cinema?'},
+      {pt:'Eles vão para França.',      en:'They are going to France.'}
+    ],
+    questions: [
+      // vou (10)
+      {s:'Eu ___ ao supermercado.',        a:'vou'},
+      {s:'Eu ___ estudar hoje.',           a:'vou'},
+      {s:'Eu ___ ao trabalho de manhã.',   a:'vou'},
+      {s:'Eu ___ correr no parque.',       a:'vou'},
+      {s:'Eu ___ ao café depois do trabalho.', a:'vou'},
+      {s:'Eu ___ dormir cedo hoje.',       a:'vou'},
+      {s:'Eu ___ tomar banho agora.',      a:'vou'},
+      {s:'Eu ___ ao banco esta tarde.',    a:'vou'},
+      {s:'Eu ___ ao dentista na próxima semana.', a:'vou'},
+      {s:'Eu ___ preparar o jantar.',      a:'vou'},
+      // vais (8)
+      {s:'Tu ___ à escola?',              a:'vais'},
+      {s:'Tu ___ a Lisboa?',              a:'vais'},
+      {s:'Tu ___ ao médico esta semana?', a:'vais'},
+      {s:'Tu ___ ao ginásio amanhã?',     a:'vais'},
+      {s:'Tu ___ ver o jogo esta noite?', a:'vais'},
+      {s:'Tu ___ ao supermercado mais tarde?', a:'vais'},
+      {s:'Tu ___ ficar em casa?',         a:'vais'},
+      {s:'Tu ___ de comboio ou de avião?',a:'vais'},
+      // vai (15)
+      {s:'Ela ___ para casa.',             a:'vai'},
+      {s:'O Pedro ___ trabalhar.',         a:'vai'},
+      {s:'A Maria ___ ao mercado.',        a:'vai'},
+      {s:'O Paulo ___ buscar os filhos.',  a:'vai'},
+      {s:'Ela ___ aprender inglês.',       a:'vai'},
+      {s:'O professor ___ corrigir os testes.', a:'vai'},
+      {s:'A Ana ___ ao cabeleireiro.',     a:'vai'},
+      {s:'O João ___ ao futebol ao fim de semana.', a:'vai'},
+      {s:'Ela ___ nadar na piscina.',      a:'vai'},
+      {s:'O Pedro ___ trabalhar no novo projeto.', a:'vai'},
+      {s:'O avião ___ descolar em breve.', a:'vai'},
+      {s:'Ela ___ ter um bebé.',           a:'vai'},
+      {s:'O médico ___ examinar o paciente.', a:'vai'},
+      {s:'A loja ___ fechar às 20h.',      a:'vai'},
+      {s:'Ele ___ de férias em julho.',    a:'vai'},
+      // vamos (9)
+      {s:'Nós ___ fazer café.',            a:'vamos'},
+      {s:'Nós ___ à praia.',              a:'vamos'},
+      {s:'Nós ___ jantar fora hoje.',      a:'vamos'},
+      {s:'Nós ___ fazer uma viagem.',      a:'vamos'},
+      {s:'Nós ___ ao aeroporto de carro.', a:'vamos'},
+      {s:'Nós ___ ao restaurante no sábado.', a:'vamos'},
+      {s:'Nós ___ fazer exercício.',       a:'vamos'},
+      {s:'Nós ___ ao concerto esta noite.',a:'vamos'},
+      {s:'Nós ___ de férias para o Algarve.', a:'vamos'},
+      // vão (8)
+      {s:'Eles ___ ao cinema.',            a:'vão'},
+      {s:'Eles ___ fazer compras.',        a:'vão'},
+      {s:'Eles ___ de férias em agosto.',  a:'vão'},
+      {s:'Eles ___ apanhar o metro.',      a:'vão'},
+      {s:'Eles ___ a pé para a escola.',   a:'vão'},
+      {s:'Eles ___ visitar os avós.',      a:'vão'},
+      {s:'Eles ___ ao parque com as crianças.', a:'vão'},
+      {s:'Eles ___ para França de avião.', a:'vão'}
+    ]
+  }
+};
+
+// ── Runtime state ─────────────────────────────────────────────────────────
+var currentVerb  = '{{ verb }}';
+var V            = VERBS[currentVerb];
+var _questions   = [];
+var _idx         = 0;
+var _answers     = {};
+var _answered    = false;
+var _seenPool    = [];    // indices seen this session (resets on startQuiz, persists on practiceMore)
+var _poolReset   = false; // did the pool just reset?
+
+window.addEventListener('DOMContentLoaded', function() { populateStudy(); });
+
+// ── Populate study page ───────────────────────────────────────────────────
+function populateStudy() {
+  document.getElementById('pageTitle').textContent    = V.title;
+  document.getElementById('pageSubtitle').textContent = V.subtitle;
+
+  var hdr = document.getElementById('tableHeader');
+  hdr.style.background = V.color;
+  document.getElementById('conjHead').style.background = V.color;
+  document.getElementById('qBar').className = 'progress-bar ' + V.barClass;
+
+  var badge = document.getElementById('verbBadge');
+  badge.textContent = V.title + ' Quiz';
+  badge.style.background = V.color;
+
+  // Conjugation table
+  var tbody = '';
+  V.conj.forEach(function(row) {
+    tbody += '<tr><td class="conj-pronoun">' + esc(row.pronoun) +
+             '</td><td class="conj-form" style="color:' + V.color + ';">' +
+             esc(row.form) + '</td></tr>';
+  });
+  document.getElementById('conjBody').innerHTML = tbody;
+
+  // Rules
+  var rulesHtml = '';
+  V.rules.forEach(function(r) {
+    rulesHtml += '<div class="rule-item"><div class="rule-dot" style="background:' +
+                 V.color + ';"></div><div>' + r + '</div></div>';
+  });
+  document.getElementById('rulesList').innerHTML = rulesHtml;
+
+  // Examples
+  var exHtml = '';
+  V.examples.forEach(function(e) {
+    exHtml += '<div class="example-item" style="border-left-color:' + V.color + ';">' +
+              '<span class="ex-pt">' + esc(e.pt) + '</span>' +
+              '<span class="ex-en">' + esc(e.en) + '</span></div>';
+  });
+  document.getElementById('examplesList').innerHTML = exHtml;
+
+  // Best score on study page
+  var p = loadProgress();
+  var prev = p.grammar[currentVerb];
+  if (prev && prev.best > 0) {
+    document.getElementById('studyBest').innerHTML =
+      starsHtml(prev.stars) +
+      '<span class="ms-2 text-muted small">Best: ' + prev.best + '/10</span>';
+  }
+}
+
+// ── Session-aware question picker ─────────────────────────────────────────
+function pickBatch(pool, batchSize) {
+  var allIdx = pool.map(function(_, i){ return i; });
+  var unseen = allIdx.filter(function(i){ return _seenPool.indexOf(i) === -1; });
+
+  _poolReset = unseen.length < batchSize;
+  if (_poolReset) {
+    _seenPool = [];
+    unseen = allIdx.slice();
+  }
+
+  var shuffled = unseen.slice();
+  shuffle(shuffled);
+  var picked = shuffled.slice(0, batchSize);
+  _seenPool = _seenPool.concat(picked);
+  return picked.map(function(i){ return pool[i]; });
+}
+
+// ── Start quiz (fresh session) ────────────────────────────────────────────
+function startQuiz() {
+  _seenPool = [];
+  _poolReset = false;
+  launchBatch();
+}
+
+// ── Practice More (continues session pool) ────────────────────────────────
+function practiceMore() {
+  _poolReset = false;
+  launchBatch();
+}
+
+function launchBatch() {
+  _idx = 0; _answers = {};
+  _questions = pickBatch(V.questions, 10);
+  document.getElementById('qTotal').textContent = _questions.length;
+  showSection('sQuiz');
+  renderQ();
+}
+
+// ── Quiz rendering ────────────────────────────────────────────────────────
+function renderQ() {
+  _answered = false;
+  var q   = _questions[_idx];
+  var cur = _idx + 1;
+  var tot = _questions.length;
+
+  document.getElementById('qNum').textContent = cur;
+  document.getElementById('qBar').style.width = Math.round((_idx / tot) * 100) + '%';
+
+  document.getElementById('qSentence').innerHTML =
+    esc(q.s).replace('___', '<span style="color:' + V.color + ';font-size:1.35rem;">___</span>');
+
+  // Distractors: other forms of the same verb (tests conjugation precision)
+  var distractors = V.allForms.filter(function(f){ return f !== q.a; });
+  shuffle(distractors);
+  var options = [q.a].concat(distractors.slice(0, 3));
+  shuffle(options);
+
+  var letters = ['A','B','C','D'];
+  var html = '';
+  options.forEach(function(opt, i) {
+    html += '<div class="option-btn" data-value="' + esc(opt) + '" data-correct="' + esc(q.a) +
+            '" onclick="pick(this)"><span class="option-circle">' + letters[i] +
+            '</span><span>' + esc(opt) + '</span></div>';
+  });
+  document.getElementById('qOptions').innerHTML = html;
+
+  var fb = document.getElementById('qFeedback');
+  fb.className = 'feedback-box mb-2'; fb.innerHTML = '';
+  var nb = document.getElementById('qNextBtn');
+  nb.style.display = 'none';
+  nb.innerHTML = _idx < tot - 1
+    ? 'Next Question &nbsp;<i class="bi bi-arrow-right-circle-fill"></i>'
+    : 'See My Results &nbsp;<i class="bi bi-trophy-fill"></i>';
+}
+
+function pick(el) {
+  if (_answered) return;
+  _answered = true;
+  var chosen  = el.dataset.value;
+  var correct = el.dataset.correct;
+  var ok      = (chosen === correct);
+
+  document.querySelectorAll('.option-btn').forEach(function(b) {
+    b.classList.add('locked');
+    if (b.dataset.value === correct) b.classList.add('opt-correct');
+  });
+  if (ok) el.classList.add('opt-correct');
+  else    el.classList.add('opt-incorrect');
+
+  _answers[_idx] = {ok:ok, chosen:chosen, correct:correct};
+
+  var nCorrect  = Object.values(_answers).filter(function(a){return a.ok;}).length;
+  var nAnswered = Object.keys(_answers).length;
+  document.getElementById('qCorrect').textContent  = nCorrect;
+  document.getElementById('qAnswered').textContent = nAnswered;
+
+  var fb = document.getElementById('qFeedback');
+  fb.classList.add('show');
+  if (ok) {
+    fb.classList.add('feedback-correct');
+    fb.innerHTML = '<i class="bi bi-check-circle-fill"></i>&nbsp; Correct!';
+  } else {
+    fb.classList.add('feedback-incorrect');
+    fb.innerHTML = '<i class="bi bi-x-circle-fill"></i>&nbsp; Incorrect — the answer is: <strong>' + esc(correct) + '</strong>';
+  }
+  document.getElementById('qNextBtn').style.display = 'block';
+}
+
+function nextQ() {
+  _idx++;
+  if (_idx < _questions.length) renderQ();
+  else                          showResults();
+}
+
+// ── Results ───────────────────────────────────────────────────────────────
+function showResults() {
+  var correct = Object.values(_answers).filter(function(a){return a.ok;}).length;
+  var total   = _questions.length;
+  var pct     = Math.round(correct / total * 100);
+  var stars   = calcStars(correct, total);
+
+  // Persist best score to localStorage
+  var p    = loadProgress();
+  var prev = p.grammar[currentVerb] || {stars:0, best:0};
+  if (correct > prev.best) {
+    p.grammar[currentVerb] = {stars:stars, best:correct};
+    saveProgress(p);
+  }
+
+  var ringCls = pct >= 80 ? 'ring-great' : (pct >= 50 ? 'ring-good' : 'ring-poor');
+  var msg = pct === 100 ? '🏆 Perfect score!'
+          : pct >= 90  ? '🌟 Excellent!'
+          : pct >= 70  ? '👍 Good work!'
+          : pct >= 50  ? '📚 Keep practising!'
+          : "💪 Don't give up!";
+
+  // Pool status
+  var remaining = V.questions.length - _seenPool.length;
+  var poolNote  = _poolReset
+    ? '<div class="pool-chip">Pool reset — all 50 questions available again!</div>'
+    : (remaining > 0
+        ? '<div class="pool-chip">' + remaining + ' of 50 questions still in your session pool</div>'
+        : '');
+
+  var html = '<div class="card p-4 p-md-5 text-center mb-4" style="border-radius:20px;">';
+  html += '<div class="score-ring ' + ringCls + '">';
+  html += '<span>' + pct + '%</span>';
+  html += '<small style="font-size:.72rem;opacity:.85;">' + correct + '/' + total + '</small></div>';
+  html += '<h2 class="fw-bold mb-1" style="font-size:1.4rem;">' + msg + '</h2>';
+  html += '<div class="my-3">' + starsHtml(stars) + '</div>';
+  html += poolNote;
+
+  // Action buttons
+  html += '<div class="d-flex flex-column gap-2 mt-3">';
+  html += '<button class="btn btn-pu-primary py-2" style="font-size:1rem;" onclick="practiceMore()">' +
+          '<i class="bi bi-arrow-repeat"></i>&nbsp; Practice More (next 10)</button>';
+  html += '<div class="d-flex gap-2">';
+  html += '<button class="btn btn-outline-secondary flex-fill" style="border-radius:50px;font-weight:700;" onclick="showSection(\'sStudy\');populateStudy();">' +
+          '<i class="bi bi-book-fill"></i> Review Verb</button>';
+  html += '<a href="/grammar" class="btn btn-outline-secondary flex-fill" style="border-radius:50px;font-weight:700;">' +
+          '<i class="bi bi-grid-3x3-gap-fill"></i> Grammar Hub</a>';
+  html += '</div></div></div>';
+
+  // Question review strip
+  html += '<h6 class="fw-bold mb-3"><i class="bi bi-list-check"></i> Question Review</h6>';
+  _questions.forEach(function(q, i) {
+    var a   = _answers[i];
+    var ok  = a && a.ok;
+    var cls = ok ? 'eafaf1' : 'fdf2f2';
+    var bdr = ok ? '2ecc71' : 'e74c3c';
+    html += '<div style="background:#' + cls + ';border-left:4px solid #' + bdr +
+            ';border-radius:10px;padding:.75rem 1rem;margin-bottom:.5rem;">';
+    html += '<div class="fw-bold small">' + (ok ? '✓' : '✗') + '  ' +
+            esc(q.s).replace('___', '<u>' + (a ? a.correct : '?') + '</u>') + '</div>';
+    if (!ok && a) {
+      html += '<div class="text-muted small mt-1">Your answer: <em>' + esc(a.chosen) +
+              '</em> &nbsp;· Correct: <strong>' + esc(a.correct) + '</strong></div>';
+    }
+    html += '</div>';
+  });
+
+  html += '<div class="text-center mt-3"><a href="/grammar" class="text-muted small">← Back to Grammar</a></div>';
+
+  document.getElementById('resultsContent').innerHTML = html;
+  showSection('sResults');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function showSection(id) {
+  ['sStudy','sQuiz','sResults'].forEach(function(s){
+    document.getElementById(s).style.display = s === id ? '' : 'none';
+  });
+  window.scrollTo(0, 0);
+}
+
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+</script>
+{% endblock %}

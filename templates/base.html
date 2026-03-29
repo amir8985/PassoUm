@@ -148,6 +148,12 @@
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ('grammar','grammar_verb') %}active{% endif %}"
+             href="{{ url_for('grammar') }}">
+            <i class="bi bi-pencil-square"></i> Grammar
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link {% if request.endpoint=='vocabulary' %}active{% endif %}"
              href="{{ url_for('vocabulary') }}">
             <i class="bi bi-list-columns-reverse"></i> Vocabulary
@@ -226,15 +232,42 @@ var PU_KEY = 'passoum_v1';
 function loadProgress() {
   try {
     var d = JSON.parse(localStorage.getItem(PU_KEY)) || {};
+    var gr = d.grammar || {};
     return {
       seen_ids:     Array.isArray(d.seen_ids)     ? d.seen_ids     : [],
       mastered_ids: Array.isArray(d.mastered_ids) ? d.mastered_ids : [],
       practice_log: Array.isArray(d.practice_log) ? d.practice_log : [],
-      exam_log:     Array.isArray(d.exam_log)     ? d.exam_log     : []
+      exam_log:     Array.isArray(d.exam_log)     ? d.exam_log     : [],
+      grammar: {
+        ser:   gr.ser   || {stars:0, best:0},
+        estar: gr.estar || {stars:0, best:0},
+        ter:   gr.ter   || {stars:0, best:0},
+        ir:    gr.ir    || {stars:0, best:0},
+        mixed: gr.mixed || {stars:0, best:0}
+      }
     };
   } catch(e) {
-    return {seen_ids:[], mastered_ids:[], practice_log:[], exam_log:[]};
+    return {seen_ids:[], mastered_ids:[], practice_log:[], exam_log:[],
+            grammar:{ser:{stars:0,best:0},estar:{stars:0,best:0},ter:{stars:0,best:0},ir:{stars:0,best:0},mixed:{stars:0,best:0}}};
   }
+}
+
+function calcStars(score, total) {
+  var pct = score / total * 100;
+  if (pct >= 90) return 3;
+  if (pct >= 70) return 2;
+  if (pct >= 60) return 1;
+  return 0;
+}
+
+function starsHtml(n) {
+  var h = '';
+  for (var i = 1; i <= 3; i++) {
+    h += i <= n
+      ? '<i class="bi bi-star-fill" style="color:#f39c12;font-size:1rem;"></i>'
+      : '<i class="bi bi-star"      style="color:#ccc;font-size:1rem;"></i>';
+  }
+  return h;
 }
 
 function saveProgress(data) {
