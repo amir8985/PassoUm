@@ -13,7 +13,6 @@ import os
 from flask import Flask
 
 from config import FlaskConfig, APP_VERSION, get_logger
-from models import init_user_db
 from routes import register_routes
 
 log = get_logger(__name__)
@@ -43,8 +42,7 @@ def create_app() -> Flask:
 
 
 # Module-level instance so Gunicorn can find it with:  gunicorn app:app
-log.info("Initialising user.db …")
-init_user_db()
+# user.db removed in v1.0.3.1 — progress lives in browser localStorage
 log.info("Starting PassoUm %s", __version__)
 app = create_app()
 

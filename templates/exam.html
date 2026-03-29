@@ -3,140 +3,400 @@
 
 {% block head_extra %}
 <style>
+  /* ── Hub ───────────────────────────────────────────────────── */
   .exam-hero {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 20px;
-    color: #fff;
-    padding: 2.5rem 2rem;
-    text-align: center;
-    margin-bottom: 2rem;
+    border-radius: 20px; color: #fff;
+    padding: 2.5rem 2rem; text-align: center; margin-bottom: 2rem;
   }
-  .exam-detail {
-    display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
-    margin-top: 1.2rem;
-  }
-  .exam-detail-item {
-    text-align: center;
-  }
-  .exam-detail-item .num { font-size: 1.6rem; font-weight: 800; color: #f39c12; }
-  .exam-detail-item .lbl { font-size: .75rem; color: rgba(255,255,255,.65); text-transform: uppercase; }
+  .exam-detail { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; margin-top:1.2rem; }
+  .exam-detail-item { text-align:center; }
+  .exam-detail-item .num { font-size:1.6rem; font-weight:800; color:#f39c12; }
+  .exam-detail-item .lbl { font-size:.75rem; color:rgba(255,255,255,.65); text-transform:uppercase; }
+  .history-card { border-radius:14px; border:1.5px solid #e8eaf0; background:#fff; padding:.9rem 1.2rem; display:flex; align-items:center; gap:1rem; transition:box-shadow .15s; }
+  .history-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+  .score-badge { min-width:56px; text-align:center; border-radius:10px; padding:.4rem .6rem; font-weight:800; font-size:1rem; flex-shrink:0; }
+  .score-pass { background:#d4edda; color:#155724; }
+  .score-fail { background:#f8d7da; color:#721c24; }
+  .score-mid  { background:#fff3cd; color:#7d4e00; }
 
-  .history-card {
-    border-radius: 14px;
-    border: 1.5px solid #e8eaf0;
-    background: #fff;
-    padding: .9rem 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: box-shadow .15s;
+  /* ── Exam (scrollable form) ────────────────────────────────── */
+  .exam-top-bar {
+    position:sticky; top:0; z-index:200;
+    background:rgba(26,26,46,.97); backdrop-filter:blur(8px);
+    color:#fff; padding:.65rem 1.5rem;
+    border-bottom:2px solid var(--pu-accent);
+    border-radius:0 0 14px 14px;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);
+    display:flex; align-items:center; justify-content:space-between;
+    font-weight:700; font-size:.92rem; margin-bottom:1.5rem;
   }
-  .history-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-  .score-badge {
-    min-width: 56px;
-    text-align: center;
-    border-radius: 10px;
-    padding: .4rem .6rem;
-    font-weight: 800;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-  .score-pass { background: #d4edda; color: #155724; }
-  .score-fail { background: #f8d7da; color: #721c24; }
-  .score-mid  { background: #fff3cd; color: #7d4e00; }
+  .bar-count { color:var(--pu-accent); font-size:1.1rem; font-weight:900; }
+  .q-block { background:#fff; border:1.5px solid #e8eaf0; border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; transition:border-color .2s; }
+  .q-block.has-answer { border-color:#adb5bd; }
+  .q-num { font-size:.8rem; font-weight:800; color:#888; text-transform:uppercase; letter-spacing:.06em; }
+  .passage-box { background:linear-gradient(135deg,#eaf4ff,#d9ecff); border-left:5px solid #3498db; border-radius:10px; padding:1.1rem 1.4rem; font-size:.98rem; line-height:1.8; margin-bottom:1.2rem; }
+  .audio-box { background:#fff8e1; border-left:5px solid var(--pu-accent); border-radius:10px; padding:.8rem 1.1rem; margin-bottom:1rem; }
+  .exam-option { display:flex; align-items:center; gap:.85rem; padding:.75rem 1rem; border:2px solid #e0e4ec; border-radius:10px; cursor:pointer; background:#fff; transition:border-color .15s,background .15s,transform .1s; font-size:.93rem; user-select:none; margin-bottom:.45rem; }
+  .exam-option:hover:not(.selected){ border-color:#85c1e9; background:#ebf5fb; transform:translateX(2px); }
+  .exam-option.selected { border-color:#2980b9!important; background:#d6eaf8!important; font-weight:700; }
+  .exam-opt-circle { width:28px; height:28px; border-radius:50%; background:#eee; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.78rem; flex-shrink:0; transition:background .15s,color .15s; }
+  .selected .exam-opt-circle { background:#2980b9; color:#fff; }
+  .cat-pill { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; padding:.22em .7em; border-radius:50px; }
+  .cat-reading   { background:#d9ecff; color:#1565c0; }
+  .cat-listening { background:#fff3cd; color:#7d4e00; }
+  .cat-grammar   { background:#e8f5e9; color:#1b5e20; }
+  .cat-vocabulary{ background:#f3e5f5; color:#4a148c; }
+  .submit-zone { text-align:center; padding:1.5rem 0 3.5rem; }
+
+  /* ── Review ───────────────────────────────────────────────── */
+  .review-hero { background:linear-gradient(135deg,var(--pu-dark) 0%,var(--pu-mid) 100%); border-radius:18px; color:#fff; padding:2rem 1.5rem 1.8rem; text-align:center; margin-bottom:2rem; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+  .score-ring { width:120px; height:120px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 1rem; font-weight:800; font-size:1.9rem; box-shadow:0 6px 24px rgba(0,0,0,.2); }
+  .ring-great{ background:linear-gradient(135deg,#2ecc71,#27ae60); }
+  .ring-good { background:linear-gradient(135deg,#f39c12,#e67e22); }
+  .ring-poor { background:linear-gradient(135deg,#e74c3c,#c0392b); }
+  .legend-card { border-radius:12px; padding:.75rem 1.2rem; background:#fff; border:1.5px solid #e8eaf0; display:flex; gap:1.5rem; flex-wrap:wrap; align-items:center; margin-bottom:1.5rem; font-size:.88rem; font-weight:700; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+  .review-option { display:flex; align-items:center; gap:.85rem; padding:.7rem 1rem; border:2px solid #e8eaf0; border-radius:10px; font-size:.93rem; margin-bottom:.45rem; cursor:default; }
+  .rv-correct  { border-color:#2ecc71!important; background:#eafaf1!important; font-weight:700; }
+  .rv-wrong    { border-color:#e74c3c!important; background:#fdf2f2!important; }
+  .rv-skipped  { border-color:#f39c12!important; background:#fff8e1!important; font-weight:700; }
+  .rv-neutral  { opacity:.55; }
+  .rv-circle   { width:28px; height:28px; border-radius:50%; background:#eee; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.78rem; flex-shrink:0; }
+  .rv-correct .rv-circle  { background:#2ecc71; color:#fff; }
+  .rv-wrong   .rv-circle  { background:#e74c3c; color:#fff; }
+  .rv-skipped .rv-circle  { background:#f39c12; color:#fff; }
+  .q-block.q-passed  { border-color:#82e0aa; }
+  .q-block.q-failed  { border-color:#f1948a; }
+  .q-block.q-skipped { border-color:#adb5bd; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4" style="max-width: 680px;">
+<div class="container py-4" style="max-width:820px;">
 
-  <!-- Hero -->
-  <div class="exam-hero">
-    <div style="font-size:3rem;">🎓</div>
-    <h2 class="fw-bold mt-2 mb-1">A1 Certification Mock Exam</h2>
-    <p style="color:rgba(255,255,255,.7); font-size:.95rem;">
-      Simulate the real European Portuguese A1 exam format.
-    </p>
-    <div class="exam-detail">
-      <div class="exam-detail-item">
-        <div class="num">5</div>
-        <div class="lbl">Reading</div>
+  <!-- Hub -->
+  <div id="sHub">
+    <div class="exam-hero">
+      <div style="font-size:3rem;">🎓</div>
+      <h2 class="fw-bold mt-2 mb-1">A1 Certification Mock Exam</h2>
+      <p style="color:rgba(255,255,255,.7);font-size:.95rem;">Simulate the real European Portuguese A1 exam format.</p>
+      <div class="exam-detail">
+        <div class="exam-detail-item"><div class="num">5</div><div class="lbl">Reading</div></div>
+        <div class="exam-detail-item"><div class="num">5</div><div class="lbl">Listening</div></div>
+        <div class="exam-detail-item"><div class="num">10</div><div class="lbl">Grammar</div></div>
+        <div class="exam-detail-item"><div class="num">20</div><div class="lbl">Total</div></div>
       </div>
-      <div class="exam-detail-item">
-        <div class="num">5</div>
-        <div class="lbl">Listening</div>
-      </div>
-      <div class="exam-detail-item">
-        <div class="num">10</div>
-        <div class="lbl">Grammar</div>
-      </div>
-      <div class="exam-detail-item">
-        <div class="num">20</div>
-        <div class="lbl">Total</div>
-      </div>
-    </div>
-    <form method="post" action="{{ url_for('exam_start') }}" class="mt-4">
-      <button type="submit" class="btn btn-pu-primary px-5"
-              style="font-size:1.05rem;">
-        <i class="bi bi-play-circle-fill"></i>
-        Start New Exam
+      <button class="btn btn-pu-primary px-5 mt-4" style="font-size:1.05rem;" onclick="beginExam()">
+        <i class="bi bi-play-circle-fill"></i> Start New Exam
       </button>
-    </form>
-  </div>
-
-  <!-- Pass criteria -->
-  <div class="card p-3 mb-4"
-       style="background:#eaf4ff; border:1.5px solid #3498db; border-radius:14px;">
-    <div class="fw-bold mb-1" style="color:#1565c0;">
-      <i class="bi bi-info-circle-fill"></i> Pass Criteria
     </div>
-    <ul class="mb-0 text-muted small" style="padding-left:1.1rem;">
-      <li>Score ≥ <strong>80%</strong> (16 out of 20 questions) to pass.</li>
-      <li>Reading passages are displayed above their questions.</li>
-      <li>Listening clips include an audio player.</li>
-    </ul>
-  </div>
-
-  <!-- Exam history -->
-  {% if history %}
-  <h6 class="fw-bold mb-3">
-    <i class="bi bi-clock-history text-warning"></i>
-    Last {{ history|length }} Attempt{{ 's' if history|length != 1 else '' }}
-  </h6>
-  <div class="d-flex flex-column gap-2">
-    {% for s in history %}
-    {% set pct = s.score_pct|int %}
-    <div class="history-card">
-      <div class="score-badge {{ 'score-pass' if pct >= 80 else ('score-mid' if pct >= 50 else 'score-fail') }}">
-        {{ pct }}%
-      </div>
-      <div class="flex-grow-1">
-        <div class="fw-bold" style="font-size:.95rem;">
-          {{ s.correct }}/{{ s.total }} correct
-        </div>
-        <div class="text-muted small">{{ s.taken_at[:10] }}</div>
-      </div>
-      <div>
-        {% if pct >= 80 %}
-          <span class="badge rounded-pill" style="background:#d4edda;color:#155724;">PASS</span>
-        {% else %}
-          <span class="badge rounded-pill" style="background:#f8d7da;color:#721c24;">FAIL</span>
-        {% endif %}
-      </div>
+    <div class="card p-3 mb-4" style="background:#eaf4ff;border:1.5px solid #3498db;border-radius:14px;">
+      <div class="fw-bold mb-1" style="color:#1565c0;"><i class="bi bi-info-circle-fill"></i> Pass Criteria</div>
+      <ul class="mb-0 text-muted small" style="padding-left:1.1rem;">
+        <li>Score ≥ <strong>80%</strong> (16/20) to pass.</li>
+        <li>Reading passages shown above their questions.</li>
+        <li>Listening clips include an audio player.</li>
+      </ul>
     </div>
-    {% endfor %}
+    <div id="hubHistory"></div>
+    <div class="text-center mt-4">
+      <a href="/" class="text-muted small">← Back to Home</a>
+    </div>
   </div>
-  {% else %}
-  <div class="text-center text-muted py-4">
-    <i class="bi bi-clipboard2-x" style="font-size:2.5rem;"></i>
-    <p class="mt-2 mb-0">No exam history yet.</p>
-    <p class="small">Take your first mock exam above!</p>
-  </div>
-  {% endif %}
 
-  <div class="text-center mt-4">
-    <a href="{{ url_for('index') }}" class="text-muted small">← Back to Home</a>
+  <!-- Loading -->
+  <div id="sLoading" style="display:none;" class="text-center py-5">
+    <div class="spinner-border text-warning" role="status"></div>
+    <p class="mt-3 text-muted">Building your exam…</p>
+  </div>
+
+  <!-- Exam (scrollable) -->
+  <div id="sExam" style="display:none;">
+    <div class="exam-top-bar">
+      <span><i class="bi bi-mortarboard-fill"></i>&nbsp; A1 Mock Exam</span>
+      <span>Answered:&nbsp;<span class="bar-count" id="answeredCount">0</span>&nbsp;/ 20</span>
+    </div>
+    <div id="examQs" class="px-2 px-md-0 pb-2"></div>
+    <div class="submit-zone">
+      <p class="text-muted small mb-3">
+        <i class="bi bi-info-circle"></i>
+        Scroll up to change any answer. Results only shown after submit.
+      </p>
+      <button class="btn btn-pu-primary px-5 py-3" style="font-size:1.05rem;" onclick="checkSubmit()">
+        Submit Exam &nbsp;<i class="bi bi-check2-circle"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Review -->
+  <div id="sReview" style="display:none;">
+    <div id="reviewContent"></div>
   </div>
 
 </div>
+
+<!-- Unanswered modal -->
+<div class="modal fade" id="unansweredModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header" style="background:#1a1a2e;color:#fff;border:none;">
+        <h5 class="modal-title fw-bold">⚠️ Unanswered Questions</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-4" style="font-size:1rem;">
+        You have <strong id="unansweredCount" style="color:#e74c3c;">0</strong> unanswered question(s).<br><br>
+        Do you want to go back and continue answering, or submit as-is?
+      </div>
+      <div class="modal-footer" style="border:none;gap:.6rem;">
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" style="border-radius:50px;font-weight:700;">
+          <i class="bi bi-pencil"></i> Continue Answering
+        </button>
+        <button type="button" class="btn btn-danger px-4" id="submitAnywayBtn" style="border-radius:50px;font-weight:700;">
+          <i class="bi bi-send-check-fill"></i> Submit Anyway
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var _questions  = [];
+var _answers    = {};   // idx → chosen text (or undefined)
+var _answered   = new Set();   // set of answered question indices
+
+// ── Hub setup ─────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function() {
+  var p = loadProgress();
+  if (p.exam_log.length > 0) {
+    var last10 = p.exam_log.slice(-10).reverse();
+    var html = '<h6 class="fw-bold mb-3"><i class="bi bi-clock-history text-warning"></i> Last ' + last10.length + ' Attempt' + (last10.length!==1?'s':'') + '</h6>';
+    html += '<div class="d-flex flex-column gap-2">';
+    last10.forEach(function(s) {
+      var pct  = Math.round(s.score / s.total * 100);
+      var date = s.date ? s.date.slice(0,10) : '—';
+      var cls  = pct >= 80 ? 'score-pass' : (pct >= 50 ? 'score-mid' : 'score-fail');
+      var pass = pct >= 80
+        ? '<span class="badge rounded-pill" style="background:#d4edda;color:#155724;">PASS</span>'
+        : '<span class="badge rounded-pill" style="background:#f8d7da;color:#721c24;">FAIL</span>';
+      html += '<div class="history-card">' +
+        '<div class="score-badge ' + cls + '">' + pct + '%</div>' +
+        '<div class="flex-grow-1"><div class="fw-bold" style="font-size:.95rem;">' + s.score + '/' + s.total + ' correct</div>' +
+        '<div class="text-muted small">' + date + '</div></div>' + pass + '</div>';
+    });
+    html += '</div>';
+    document.getElementById('hubHistory').innerHTML = html;
+  } else {
+    document.getElementById('hubHistory').innerHTML =
+      '<div class="text-center text-muted py-4"><i class="bi bi-clipboard2-x" style="font-size:2.5rem;"></i>' +
+      '<p class="mt-2 mb-0">No exam history yet.</p><p class="small">Take your first mock exam above!</p></div>';
+  }
+});
+
+function show(id) {
+  ['sHub','sLoading','sExam','sReview'].forEach(function(s){
+    document.getElementById(s).style.display = s === id ? '' : 'none';
+  });
+}
+
+// ── Load exam bundle ──────────────────────────────────────────────────────
+function beginExam() {
+  show('sLoading');
+  _questions = []; _answers = {}; _answered = new Set();
+  fetch('/api/exam')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      _questions = data.questions;
+      renderExamForm();
+      show('sExam');
+    })
+    .catch(function() {
+      show('sHub');
+      alert('Failed to load exam. Please try again.');
+    });
+}
+
+// ── Render scrollable exam ────────────────────────────────────────────────
+function renderExamForm() {
+  var html = '';
+  var prevPid = null;
+  _questions.forEach(function(q, idx) {
+    // Passage: show once per reading group
+    if (q.passage_id && q.passage_id !== prevPid) {
+      prevPid = q.passage_id;
+      if (q.passage_text) {
+        html += '<div class="passage-box"><div class="small fw-bold mb-2" style="color:#1565c0;"><i class="bi bi-file-earmark-text"></i> READING PASSAGE</div>' + esc(q.passage_text) + '</div>';
+      }
+    } else if (!q.passage_id) { prevPid = null; }
+
+    var catLabels = {vocabulary:'💬 Vocabulary',grammar:'✏️ Grammar',reading:'📖 Reading',listening:'🎧 Listening'};
+    html += '<div class="q-block" id="qb' + idx + '">';
+    html += '<div class="d-flex justify-content-between align-items-center mb-3">';
+    html += '<span class="q-num">Question ' + (idx+1) + ' of ' + _questions.length + '</span>';
+    html += '<span class="cat-pill cat-' + q.category + '">' + (catLabels[q.category]||q.category) + '</span>';
+    html += '</div>';
+
+    if (q.audio_path && q.category === 'listening') {
+      html += '<div class="audio-box"><div class="small fw-bold mb-2" style="color:#7d4e00;"><i class="bi bi-soundwave"></i> LISTEN BEFORE ANSWERING</div>' +
+              '<audio controls class="w-100" style="border-radius:8px;"><source src="/' + esc(q.audio_path) + '" type="audio/mpeg"></audio></div>';
+    }
+
+    html += '<p class="fw-bold mb-3" style="font-size:1rem;color:#1a1a2e;line-height:1.55;">' + esc(q.question_text) + '</p>';
+    html += '<div>';
+    ['A','B','C','D'].forEach(function(letter, i) {
+      var val = [q.option_a,q.option_b,q.option_c,q.option_d][i];
+      html += '<div class="exam-option" data-idx="' + idx + '" data-value="' + esc(val) + '" onclick="examPick(this)">' +
+              '<span class="exam-opt-circle">' + letter + '</span><span>' + esc(val) + '</span></div>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('examQs').innerHTML = html;
+  document.getElementById('answeredCount').textContent = '0';
+}
+
+function examPick(el) {
+  var idx = parseInt(el.dataset.idx);
+  var block = document.getElementById('qb' + idx);
+  block.querySelectorAll('.exam-option').forEach(function(o){ o.classList.remove('selected'); });
+  el.classList.add('selected');
+  _answers[idx] = el.dataset.value;
+  if (!_answered.has(idx)) {
+    _answered.add(idx);
+    block.classList.add('has-answer');
+    document.getElementById('answeredCount').textContent = _answered.size;
+  }
+}
+
+// ── Submit logic ──────────────────────────────────────────────────────────
+function checkSubmit() {
+  var unanswered = _questions.length - _answered.size;
+  if (unanswered > 0) {
+    document.getElementById('unansweredCount').textContent = unanswered;
+    var modal = new bootstrap.Modal(document.getElementById('unansweredModal'));
+    modal.show();
+    document.getElementById('submitAnywayBtn').onclick = function() {
+      bootstrap.Modal.getInstance(document.getElementById('unansweredModal')).hide();
+      doSubmit();
+    };
+  } else { doSubmit(); }
+}
+
+function doSubmit() {
+  var correct = 0; var skipped = 0;
+  _questions.forEach(function(q, idx) {
+    var chosen = _answers[idx];
+    if (!chosen) skipped++;
+    else if (chosen === q.correct_answer) correct++;
+  });
+  var p = loadProgress();
+  p.exam_log.push({ date: new Date().toISOString(), score: correct, total: _questions.length });
+  saveProgress(p);
+  renderReview(correct, _questions.length, skipped);
+  show('sReview');
+  window.scrollTo(0,0);
+}
+
+// ── Review rendering ──────────────────────────────────────────────────────
+function renderReview(correct, total, skipped) {
+  var pct     = Math.round(correct / total * 100);
+  var ringCls = pct >= 80 ? 'ring-great' : (pct >= 50 ? 'ring-good' : 'ring-poor');
+  var msg     = pct >= 80 ? '🏆 Excellent Result!' : (pct >= 60 ? '👍 Good Effort!' : (pct >= 40 ? '📚 Keep Practising!' : "💪 Don't Give Up!"));
+  var passBadge = pct >= 80
+    ? '<span class="badge rounded-pill px-3 py-2" style="background:#d4edda;color:#155724;font-size:.9rem;">✓ PASS — 80% threshold reached</span>'
+    : '<span class="badge rounded-pill px-3 py-2" style="background:#f8d7da;color:#721c24;font-size:.9rem;">✗ FAIL — need ' + Math.max(0,80-pct) + '% more to pass</span>';
+  var skippedBadge = skipped > 0
+    ? '<div class="mt-2"><span class="badge rounded-pill px-3 py-1" style="background:#fff3cd;color:#856404;font-size:.85rem;"><i class="bi bi-dash-circle"></i> ' + skipped + ' question' + (skipped!==1?'s':'') + ' skipped</span></div>'
+    : '';
+
+  var html = '<div class="review-hero">';
+  html += '<div class="score-ring ' + ringCls + '"><span style="font-size:2rem;">' + pct + '%</span></div>';
+  html += '<p class="fw-bold mb-1 mt-2" style="font-size:1.3rem;letter-spacing:-.3px;">Score: ' + correct + '/' + total + ' (' + pct + '%)</p>';
+  html += '<h2 class="fw-bold mb-2" style="font-size:1.2rem;opacity:.88;">' + msg + '</h2>';
+  html += passBadge + skippedBadge;
+  html += '<div class="d-flex flex-wrap gap-2 justify-content-center mt-4">';
+  html += '<a href="/" class="btn btn-pu-primary"><i class="bi bi-house-door-fill"></i> Back to Home</a>';
+  html += '<button class="btn btn-outline-warning" style="border-radius:50px;font-weight:700;" onclick="beginExam()"><i class="bi bi-arrow-repeat"></i> New Exam</button>';
+  html += '</div></div>';
+
+  // Legend
+  html += '<div class="legend-card">';
+  html += '<span style="font-size:.82rem;color:#555;font-weight:600;">Answer key:</span>';
+  html += '<span class="d-flex align-items-center gap-2"><span class="legend-dot" style="background:#2ecc71;"></span> Correct</span>';
+  html += '<span class="d-flex align-items-center gap-2"><span class="legend-dot" style="background:#e74c3c;"></span> Wrong choice</span>';
+  html += '<span class="d-flex align-items-center gap-2"><span class="legend-dot" style="background:#f39c12;"></span> Skipped (correct answer)</span>';
+  html += '<span class="d-flex align-items-center gap-2"><span class="legend-dot" style="background:#dee2e6;"></span> Not selected</span>';
+  html += '</div>';
+
+  // Per-question review
+  var prevPid = null;
+  _questions.forEach(function(q, idx) {
+    var chosen  = _answers[idx] || null;
+    var skippedQ = !chosen;
+    var isCorrect = chosen && chosen === q.correct_answer;
+    var blockCls  = isCorrect ? 'q-passed' : (skippedQ ? 'q-skipped' : 'q-failed');
+
+    if (q.passage_id && q.passage_id !== prevPid) {
+      prevPid = q.passage_id;
+      if (q.passage_text) {
+        html += '<div class="passage-box"><div class="small fw-bold mb-2" style="color:#1565c0;"><i class="bi bi-file-earmark-text"></i> READING PASSAGE</div>' + esc(q.passage_text) + '</div>';
+      }
+    } else if (!q.passage_id) { prevPid = null; }
+
+    var catLabels = {vocabulary:'💬 Vocabulary',grammar:'✏️ Grammar',reading:'📖 Reading',listening:'🎧 Listening'};
+    var resultBadge = isCorrect
+      ? '<span class="badge" style="background:#d4edda;color:#155724;font-weight:700;">✓ Correct</span>'
+      : (skippedQ ? '<span class="badge bg-secondary">— Skipped</span>'
+                  : '<span class="badge" style="background:#f8d7da;color:#721c24;font-weight:700;">✗ Incorrect</span>');
+
+    html += '<div class="q-block ' + blockCls + '">';
+    html += '<div class="d-flex justify-content-between align-items-center mb-3">';
+    html += '<span class="q-num">Question ' + (idx+1) + ' of ' + total + '</span>';
+    html += '<div class="d-flex align-items-center gap-2"><span class="cat-pill cat-' + q.category + '">' + (catLabels[q.category]||q.category) + '</span>' + resultBadge + '</div>';
+    html += '</div>';
+
+    if (q.audio_path && q.category === 'listening') {
+      html += '<div class="audio-box"><div class="small fw-bold mb-2" style="color:#7d4e00;"><i class="bi bi-soundwave"></i> TRANSCRIPT AUDIO</div>' +
+              '<audio controls class="w-100" style="border-radius:8px;"><source src="/' + esc(q.audio_path) + '" type="audio/mpeg"></audio></div>';
+    }
+
+    html += '<p class="fw-bold mb-3" style="font-size:1rem;color:#1a1a2e;line-height:1.55;">' + esc(q.question_text) + '</p>';
+
+    var opts = ['A','B','C','D'];
+    var vals = [q.option_a,q.option_b,q.option_c,q.option_d];
+    vals.forEach(function(val, i) {
+      var isCorrectOpt = (val === q.correct_answer);
+      var isUserChoice = (val === chosen);
+      var isUserWrong  = isUserChoice && !isCorrectOpt;
+      var optCls;
+      if (skippedQ && isCorrectOpt)  optCls = 'rv-skipped';
+      else if (isCorrectOpt)         optCls = 'rv-correct';
+      else if (isUserWrong)          optCls = 'rv-wrong';
+      else                           optCls = 'rv-neutral';
+
+      var label = '';
+      if (skippedQ && isCorrectOpt)         label = '<span class="ms-auto small fw-bold" style="color:#e67e22;"><i class="bi bi-arrow-right-circle-fill"></i> Correct answer (skipped)</span>';
+      else if (isCorrectOpt && isUserChoice) label = '<span class="ms-auto small text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Your answer — Correct!</span>';
+      else if (isCorrectOpt)                 label = '<span class="ms-auto small text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Correct answer</span>';
+      else if (isUserWrong)                  label = '<span class="ms-auto small text-danger fw-bold"><i class="bi bi-x-circle-fill"></i> Your answer</span>';
+
+      html += '<div class="review-option ' + optCls + '">' +
+              '<span class="rv-circle">' + opts[i] + '</span><span>' + esc(val) + '</span>' + label + '</div>';
+    });
+
+    if (skippedQ) {
+      html += '<div class="mt-2" style="font-size:.83rem;font-weight:700;color:#6c757d;"><i class="bi bi-dash-circle"></i> Not answered — correct answer was: <strong>' + esc(q.correct_answer) + '</strong></div>';
+    }
+    html += '</div>';
+  });
+
+  html += '<div class="text-center pb-5 mt-2"><div class="d-flex flex-wrap gap-2 justify-content-center">';
+  html += '<a href="/" class="btn btn-pu-primary px-4"><i class="bi bi-house-door-fill"></i> Back to Home</a>';
+  html += '<button class="btn btn-outline-warning px-4" style="border-radius:50px;font-weight:700;" onclick="beginExam()"><i class="bi bi-arrow-repeat"></i> New Exam</button>';
+  html += '</div></div>';
+
+  document.getElementById('reviewContent').innerHTML = html;
+}
+</script>
 {% endblock %}
