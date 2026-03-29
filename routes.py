@@ -36,6 +36,7 @@ from models import (
     get_vocab_questions_for_words, get_mastered_vocab_questions,
     get_last_practice_info, get_practice_words,
     init_user_db, mark_word_learn_result,
+    reset_user_data,
     save_score, save_session, score_already_saved,
     select_exam_questions, get_session,
 )
@@ -92,6 +93,14 @@ def register_routes(app: Flask) -> None:
             return err
         words = get_vocab_list()
         return render_template("vocabulary.html", words=words)
+
+    @app.route("/reset_data", methods=["POST"])
+    def reset_data():
+        """Wipe all user progress and clear the Flask session, then go home."""
+        log.info("[1.0.2.2] /reset_data — clearing all user progress")
+        reset_user_data()
+        session.clear()
+        return redirect(url_for("index"))
 
     @app.route("/db-status")
     def db_status():

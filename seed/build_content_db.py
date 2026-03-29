@@ -148,8 +148,13 @@ def _apply_grammar_instruction(q_text: str) -> str:
 
 def _make_vocab_questions(words: list[tuple]) -> list[dict]:
     """
-    Generate 3 MCQ types per word using other words as distractors.
+    Generate 4 MCQ types per word using other words as distractors.
     words: list of (id, word, translation, category)
+    Types:
+      Q1 — Text PT  → Text EN   "What does «word» mean?"
+      Q2 — Text EN  → Text PT   "How do you say «translation» in Portuguese?"
+      Q3 — Context fill-in      (English instruction + Portuguese sentence)
+      Q4 — Audio PT → Text EN   "What is the meaning of the word you just heard?"
     Returns list of question dicts ready for DB insert.
     """
     log.info("Generating vocabulary MCQs for %d words …", len(words))
@@ -194,6 +199,7 @@ def _make_vocab_questions(words: list[tuple]) -> list[dict]:
             "option_c": opts_t[2], "option_d": opts_t[3],
             "correct_answer": translation,
             "topic": category,
+            "audio_path": "",
         })
 
         # Q2 — translation: English → Portuguese
@@ -207,6 +213,7 @@ def _make_vocab_questions(words: list[tuple]) -> list[dict]:
             "option_c": opts_w[2], "option_d": opts_w[3],
             "correct_answer": word,
             "topic": category,
+            "audio_path": "",
         })
 
         # Q3 — context fill-in (English instruction frame + Portuguese sentence)
@@ -223,9 +230,24 @@ def _make_vocab_questions(words: list[tuple]) -> list[dict]:
             "option_c": opts_c[2], "option_d": opts_c[3],
             "correct_answer": blank_answer,
             "topic": category,
+            "audio_path": "",
         })
 
-    log.info("Generated %d vocabulary questions", len(questions))
+        # Q4 — Audio PT → Text EN  (uses the word's own audio file, no new TTS needed)
+        opts_a = [translation] + dt[:3]
+        random.shuffle(opts_a)
+        questions.append({
+            "category": "vocabulary",
+            "word_id": wid,
+            "question_text": "What is the meaning of the word you just heard?",
+            "option_a": opts_a[0], "option_b": opts_a[1],
+            "option_c": opts_a[2], "option_d": opts_a[3],
+            "correct_answer": translation,
+            "topic": category,
+            "audio_path": f"static/audio/word_{wid}.mp3",
+        })
+
+    log.info("Generated %d vocabulary questions (%d per word)", len(questions), 4)
     return questions
 
 
@@ -287,14 +309,15 @@ def main():
         conn.execute(
             """INSERT INTO questions
                (category, word_id, question_text,
-                option_a, option_b, option_c, option_d, correct_answer, topic)
+                option_a, option_b, option_c, option_d,
+                correct_answer, topic, audio_path)
                VALUES (:category, :word_id, :question_text,
                        :option_a, :option_b, :option_c, :option_d,
-                       :correct_answer, :topic)""",
+                       :correct_answer, :topic, :audio_path)""",
             q,
         )
     conn.commit()
-    log.info("Vocab MCQs inserted: %d", len(vocab_qs))
+    log.info("Vocab MCQs inserted: %d (4 types per word)", len(vocab_qs))
 
     # ── 3. Listening clips + questions ──────────────────────────────────
     from listening_40 import LISTENING

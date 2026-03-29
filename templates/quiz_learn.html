@@ -42,6 +42,43 @@
     margin-bottom: 1.4rem;
   }
 
+  /* ── Vocabulary audio box ─────────────────────────────────── */
+  .audio-vocab-box {
+    background: linear-gradient(135deg, #f3e5f5, #e8d5f5);
+    border-left: 5px solid #8e44ad;
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    margin-bottom: 1.4rem;
+    text-align: center;
+  }
+  .btn-play-word {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    background: linear-gradient(135deg, #8e44ad, #6c3483);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: .85rem 2.2rem;
+    font-size: 1.08rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: .5rem;
+    min-width: 180px;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-play-word:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(142,68,173,.4);
+  }
+  .btn-play-word:disabled {
+    opacity: .7;
+    cursor: default;
+  }
+  .btn-play-word .play-icon { font-size: 1.5rem; line-height: 1; }
+
   /* ── Question text ─────────────────────────────────────────── */
   .question-text {
     font-size: 1.15rem; font-weight: 700;
@@ -165,7 +202,7 @@
     </div>
     {% endif %}
 
-    <!-- Audio (listening) -->
+    <!-- Audio (listening clip) -->
     {% if question.audio_path and question.category == 'listening' %}
     <div class="audio-box">
       <div class="text-muted small fw-bold mb-2">
@@ -175,6 +212,25 @@
         <source src="{{ url_for('static', filename=question.audio_path.replace('static/', '')) }}"
                 type="audio/mpeg">
       </audio>
+    </div>
+    {% endif %}
+
+    <!-- Audio (vocabulary word — auto-play on load) -->
+    {% if question.audio_path and question.category == 'vocabulary' %}
+    <div class="audio-vocab-box">
+      <div class="small fw-bold mb-3" style="color:#6c3483; text-transform:uppercase; letter-spacing:.05em;">
+        <i class="bi bi-volume-up-fill"></i>&nbsp; Listen to the word
+      </div>
+      <audio id="wordAudio" preload="auto"
+             src="{{ url_for('static', filename=question.audio_path.replace('static/', '')) }}">
+      </audio>
+      <button type="button" class="btn-play-word" id="playBtn" onclick="playWordAudio()">
+        <i class="bi bi-play-circle-fill play-icon" id="playIcon"></i>
+        <span id="playLabel">Play Word</span>
+      </button>
+      <p class="text-muted small mt-2 mb-0" style="font-size:.8rem;">
+        Tap to hear the word &middot; you can replay any time
+      </p>
     </div>
     {% endif %}
 
@@ -221,6 +277,43 @@
 {% block scripts %}
 <script>
   var _answered = false;
+
+  // ── Audio-vocabulary question: autoplay + play button state ──────────
+  (function () {
+    var audio = document.getElementById('wordAudio');
+    if (!audio) return;
+
+    var btn   = document.getElementById('playBtn');
+    var icon  = document.getElementById('playIcon');
+    var label = document.getElementById('playLabel');
+
+    function setPlaying() {
+      icon.className  = 'bi bi-pause-circle-fill play-icon';
+      label.textContent = 'Playing\u2026';
+      btn.disabled    = true;
+    }
+    function setReady(again) {
+      icon.className  = 'bi bi-play-circle-fill play-icon';
+      label.textContent = again ? 'Play Again' : 'Play Word';
+      btn.disabled    = false;
+    }
+
+    audio.addEventListener('play',  function () { setPlaying(); });
+    audio.addEventListener('ended', function () { setReady(true); });
+    audio.addEventListener('pause', function () { setReady(true); });
+    audio.addEventListener('error', function () { setReady(false); });
+
+    // Try autoplay; many browsers require a prior user gesture — the
+    // manual Play button is always visible as a reliable fallback.
+    audio.play().catch(function () { setReady(false); });
+  })();
+
+  function playWordAudio() {
+    var audio = document.getElementById('wordAudio');
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play();
+  }
 
   function selectOption(el) {
     if (_answered) return;   // one click only

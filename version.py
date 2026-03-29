@@ -5,4 +5,4 @@
 #   PATCH  — bug fixes
 #   MINOR  — increment on git push to server
 #   MAJOR  — major redesigns / breaking changes
-__version__ = '1.0.1.6'
+__version__ = '1.0.2.2'

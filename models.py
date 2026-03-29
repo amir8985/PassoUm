@@ -111,6 +111,23 @@ def init_user_db() -> None:
         conn.close()
 
 
+def reset_user_data() -> None:
+    """
+    Wipe every table in user.db — quiz sessions, scores, and word progress.
+    Used by the 'Reset Progress' feature.  The schema is preserved; only rows
+    are deleted so the app continues working immediately after the reset.
+    """
+    conn = user_db()
+    try:
+        conn.execute("DELETE FROM quiz_sessions")
+        conn.execute("DELETE FROM quiz_scores")
+        conn.execute("DELETE FROM word_progress")
+        conn.commit()
+        log.info("[1.0.2.2] User data reset — all tables cleared")
+    finally:
+        conn.close()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Quiz-session helpers
 # ─────────────────────────────────────────────────────────────────────────────

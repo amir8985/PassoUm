@@ -14,8 +14,20 @@ MAJOR, MINOR, PATCH, BUILD = (int(x) for x in APP_VERSION.split("."))
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 CONTENT_DB_PATH = BASE_DIR / "content.db"   # pre-built, READ-ONLY on server
-USER_DB_PATH    = BASE_DIR / "user.db"      # runtime writes go here
 AUDIO_DIR       = BASE_DIR / "static" / "audio"
+
+# USER_DB_PATH honours the DISK_PATH env var so Render's Persistent Disk
+# survives redeployments.  Locally, DISK_PATH is unset → falls back to BASE_DIR.
+#
+# Render setup (one-time, in the Render Dashboard):
+#   1. Service → Settings → Disks → Add Disk
+#      Name: userdata  |  Mount Path: /data  |  Size: 1 GB
+#   2. Service → Environment → Add Variable
+#      Key: DISK_PATH   Value: /data
+#
+# That's it.  user.db will live at /data/user.db and survive every deploy.
+_disk_root  = os.getenv("DISK_PATH", str(BASE_DIR))
+USER_DB_PATH = Path(_disk_root) / "user.db"
 
 # ── Logging (version stamped in every line) ───────────────────────────────────
 LOG_FORMAT = (

@@ -63,6 +63,16 @@
       background: rgba(255,255,255,.1);
       color: #fff !important;
     }
+    /* settings dropdown */
+    .dropdown-menu-dark .dropdown-item.reset-item {
+      color: #ff6b6b;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+    .dropdown-menu-dark .dropdown-item.reset-item:hover {
+      background: rgba(255,107,107,.15);
+      color: #ff4444;
+    }
 
     /* ── Cards ───────────────────────────────────────────────────── */
     .card {
@@ -145,10 +155,61 @@
             <i class="bi bi-list-columns-reverse"></i> Vocabulary
           </a>
         </li>
+
+        <!-- Settings dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link" href="#" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false"
+             title="Settings">
+            <i class="bi bi-three-dots-vertical"></i>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+            <li>
+              <a class="dropdown-item reset-item" href="#"
+                 data-bs-toggle="modal" data-bs-target="#resetModal">
+                <i class="bi bi-trash3-fill me-1"></i> Reset Progress
+              </a>
+            </li>
+          </ul>
+        </li>
       </ul>
     </div>
   </div>
 </nav>
+
+<!-- ── Reset-Progress confirmation modal ──────────────────────────────── -->
+<div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="resetModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-800" id="resetModalLabel" style="color:#e74c3c;">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Reset All Progress
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="mb-1">This will permanently delete:</p>
+        <ul class="small mb-3" style="color:#555;">
+          <li>All mastered words and word progress</li>
+          <li>All quiz scores and exam history</li>
+          <li>Your current learning session</li>
+        </ul>
+        <p class="fw-700 mb-0" style="color:#e74c3c; font-size:.92rem;">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>This action cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer border-0 pt-1">
+        <button type="button" class="btn btn-secondary btn-sm px-4"
+                data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="{{ url_for('reset_data') }}" class="d-inline">
+          <button type="submit" class="btn btn-danger btn-sm px-4">
+            <i class="bi bi-trash3-fill me-1"></i>Yes, Reset Everything
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
 <main class="flex-grow-1">
   {% block content %}{% endblock %}
